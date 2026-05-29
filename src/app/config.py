@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlparse
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -37,6 +38,31 @@ class Settings(BaseSettings):
     @property
     def chroma_path(self) -> Path:
         return Path(self.chroma_dir)
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        return normalize_database_url(self.database_url)
+
+    @property
+    def storage_backend(self) -> str:
+        scheme = urlparse(self.sqlalchemy_database_url).scheme
+        if scheme.startswith("postgresql"):
+            return "postgres"
+        return "sqlite"
+
+    @property
+    def persistent_data(self) -> bool:
+        return self.storage_backend == "postgres"
+
+
+def normalize_database_url(database_url: str) -> str:
+    """Support Supabase postgres:// URLs and ensure psycopg driver."""
+    url = database_url.strip()
+    if url.startswith("postgres://"):
+        url = "postgresql+psycopg://" + url.removeprefix("postgres://")
+    elif url.startswith("postgresql://") and "+psycopg" not in url:
+        url = "postgresql+psycopg://" + url.removeprefix("postgresql://")
+    return url
 
 
 @lru_cache

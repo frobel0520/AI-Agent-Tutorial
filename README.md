@@ -88,10 +88,15 @@ pytest -q
 2. Render → **New Blueprint** → 選此 repo
 3. 環境變數建議：
    - 先上線 demo：`LLM_PROVIDER=mock`
+   - **持久化（推薦）**：`DATABASE_URL` = Supabase Postgres URI（見 `deploy/supabase-setup.md`）
    - 正式問答：`LLM_PROVIDER=openai` + `OPENAI_API_KEY`
 4. 部署完成後開 `https://<your-service>.onrender.com/docs`
 
-> **注意**：Render free tier 使用 ephemeral disk，SQLite/Chroma 重啟後可能清空。學習/demo 足夠；正式使用可改 Postgres + 外部向量庫。
+### Render 免費 tier 與 Supabase
+
+- Render 本機磁碟為 **ephemeral**；請接 **Supabase Postgres** 持久化筆記與 WebHook
+- 設定步驟見 [deploy/supabase-setup.md](deploy/supabase-setup.md)
+- 未接 Supabase 時，`/health` 會顯示 `storage: sqlite`、`persistent_data: false`
 
 ### 其他平台
 
