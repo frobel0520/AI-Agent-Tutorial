@@ -83,3 +83,14 @@ class RagService:
             provider=self.settings.llm_provider,
             sources=sources,
         )
+
+    def rebuild_from_notes(self, notes: list[Note]) -> int:
+        """Rebuild local Chroma index from persisted notes (needed after Render cold start)."""
+        for note in notes:
+            self.sync_note(note)
+        return len(notes)
+
+
+def rebuild_chroma_index(settings: Settings, notes: list[Note]) -> int:
+    rag = RagService(settings)
+    return rag.rebuild_from_notes(notes)

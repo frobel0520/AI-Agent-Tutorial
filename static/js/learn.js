@@ -91,6 +91,8 @@ async function loadHealth() {
     providerCallout.innerHTML = `
       <strong>連線 OK</strong> · 服務：<code>${escapeHtml(health.app_name)}</code>
       · LLM 模式：<code>${escapeHtml(health.llm_provider)}</code>
+      · 資料儲存：<code>${escapeHtml(health.storage)}</code>
+      ${health.persistent_data ? "（Supabase 持久化已啟用）" : "（本機 SQLite，Render 重啟後資料可能消失）"}
       · 進階 API 文件：<a href="${health.docs_url}" target="_blank" rel="noreferrer">${health.docs_url}</a>
     `;
     mockExplain.innerHTML = `
