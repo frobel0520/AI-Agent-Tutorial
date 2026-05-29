@@ -1,10 +1,12 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import Settings, get_settings
 from app.database import Note, SessionLocal, init_db
@@ -15,6 +17,7 @@ from app.services.langchain_rag import RagService
 logger = logging.getLogger(__name__)
 _seed_lock = asyncio.Lock()
 _seed_done = False
+STATIC_DIR = Path(__file__).resolve().parents[2] / "static"
 
 
 def seed_notes(settings: Settings) -> None:
@@ -101,9 +104,16 @@ def create_app() -> FastAPI:
     app.include_router(ask.router)
     app.include_router(webhooks.router)
 
+    if STATIC_DIR.exists():
+        app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+    @app.get("/learn", include_in_schema=False)
+    def learn_page() -> FileResponse:
+        return FileResponse(STATIC_DIR / "learn.html")
+
     @app.get("/", include_in_schema=False)
     def root() -> RedirectResponse:
-        return RedirectResponse(url="/docs")
+        return RedirectResponse(url="/learn")
 
     @app.get("/health", response_model=HealthResponse, tags=["system"])
     def health(settings: Settings = Depends(get_settings)) -> HealthResponse:

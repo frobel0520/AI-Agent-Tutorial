@@ -27,6 +27,18 @@ def client() -> TestClient:
     get_settings.cache_clear()
 
 
+def test_learn_page(client: TestClient) -> None:
+    response = client.get("/learn")
+    assert response.status_code == 200
+    assert "新手學習台" in response.text
+
+
+def test_root_redirects_to_learn(client: TestClient) -> None:
+    response = client.get("/", follow_redirects=False)
+    assert response.status_code in (307, 308)
+    assert response.headers["location"] == "/learn"
+
+
 def test_health(client: TestClient) -> None:
     response = client.get("/health")
     assert response.status_code == 200
