@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI-Agent-Tutorial | 新手學習台</title>
+    <link rel="stylesheet" href="/static/css/learn.css" />
+  </head>
+  <body>
+    <div id="statusBanner" class="status-banner hidden"></div>
+
+    <div class="layout">
+      <header class="topbar">
+        <div class="badge">🎓 新手學習台 · RAG / REST / WebHook</div>
+        <div class="actions">
+          <a class="button secondary" href="/docs" target="_blank" rel="noreferrer">進階：Swagger API</a>
+          <button id="refreshHealthBtn" class="button secondary" type="button">重新檢查連線</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <h1>從這裡開始學 RAG</h1>
+        <p>
+          你<strong>不需要先會寫程式</strong>。這個頁面會帶你一步一步操作：先建立筆記，再問問題，最後看 LLM
+          如何根據筆記回答。右側會告訴你「按了之後會發生什麼」。
+        </p>
+        <div class="callout info" id="providerCallout">
+          正在連線到後端 API…
+        </div>
+        <nav class="steps-nav">
+          <a class="step-link active" href="#step-start" data-step="start"><span class="num">0</span><div>開始</div></a>
+          <a class="step-link" href="#step-notes" data-step="notes"><span class="num">1</span><div>建立筆記 (REST)</div></a>
+          <a class="step-link" href="#step-rag" data-step="rag"><span class="num">2</span><div>RAG 問答 (LangChain)</div></a>
+          <a class="step-link" href="#step-webhook" data-step="webhook"><span class="num">3</span><div>WebHook 事件</div></a>
+        </nav>
+      </section>
+
+      <section class="panel" id="step-start">
+        <h2>Step 0 · 我該從哪裡輸入？</h2>
+        <p class="lead">
+          在 Swagger 裡你要自己找 endpoint；在這裡，每個步驟都有<strong>輸入框 + 按鈕</strong>。你按「送出」後，畫面下方會顯示 API
+          回傳結果，並解釋每個欄位代表什麼。
+        </p>
+        <div class="grid-2">
+          <div class="callout success">
+            <strong>你現在要做的事</strong><br />
+            1. 確認上方連線狀態是 OK<br />
+            2. 到 Step 1 建立一筆筆記<br />
+            3. 到 Step 2 輸入問題並看 RAG 回答
+          </div>
+          <dl class="glossary">
+            <dt>這頁 vs Swagger</dt>
+            <dd>這頁 = 新手導覽；Swagger = 給已懂 REST 的人直接打 API。</dd>
+            <dt>我寫 code 在哪裡？</dt>
+            <dd>後端在 GitHub repo 的 <code>src/app/services/langchain_rag.py</code>。先用 UI 理解流程，再對照程式碼。</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="panel" id="step-notes">
+        <h2>Step 1 · 建立筆記（REST POST /notes）</h2>
+        <p class="lead">
+          RAG 需要「你的資料」。在這一步，你先新增筆記；後端會存進資料庫，並同步到向量資料庫（Chroma）。
+        </p>
+
+        <form id="noteForm">
+          <div class="field">
+            <label for="noteTitle">筆記標題</label>
+            <input id="noteTitle" name="title" placeholder="例如：我的 RAG 第一課" required />
+          </div>
+          <div class="field">
+            <label for="noteContent">筆記內容（LLM 之後會從這裡找答案）</label>
+            <textarea
+              id="noteContent"
+              name="content"
+              placeholder="例如：RAG 會先檢索相關筆記，再交給 LLM 組織回答。"
+              required
+            ></textarea>
+          </div>
+          <div class="actions">
+            <button class="primary" type="submit">建立筆記</button>
+            <button class="secondary" id="loadNotesBtn" type="button">重新載入筆記列表</button>
+          </div>
+        </form>
+
+        <div class="callout info">
+          <strong>預期結果：</strong>成功後會看到 <code>201 Created</code> 的 JSON，包含 <code>id</code>。這代表 REST API 建立資源成功。
+        </div>
+
+        <h3>目前筆記</h3>
+        <div id="notesList" class="note-list"></div>
+        <div id="noteResult" class="result-box">尚未建立筆記。</div>
+      </section>
+
+      <section class="panel" id="step-rag">
+        <h2>Step 2 · RAG 問答（LangChain POST /ask）</h2>
+        <p class="lead">
+          在這裡輸入你的問題。後端會：① 從筆記中檢索最相關片段 → ② 組成 Prompt → ③ 呼叫 LLM → ④ 回傳答案與來源。
+        </p>
+
+        <div class="flow">
+          <div class="node">你的問題</div>
+          <div class="arrow">→</div>
+          <div class="node">Retriever 找 top-k 筆記</div>
+          <div class="arrow">→</div>
+          <div class="node">Prompt + LLM</div>
+          <div class="arrow">→</div>
+          <div class="node">answer + sources</div>
+        </div>
+
+        <div class="callout warn" id="mockExplain">
+          目前 LLM 模式：<strong>mock</strong>。你會看到 <code>[Mock LLM]</code> 開頭的教學式回答；重點請看
+          <code>sources</code> 是否抓到正確筆記。
+        </div>
+
+        <form id="askForm">
+          <div class="field">
+            <label for="questionInput">在這裡輸入問題</label>
+            <input id="questionInput" name="question" placeholder="例如：LangChain 是什麼？" required />
+          </div>
+          <div class="field">
+            <label for="topKInput">檢索筆記數 (top_k)</label>
+            <input id="topKInput" name="top_k" type="number" min="1" max="10" value="3" />
+          </div>
+          <div class="actions">
+            <button class="primary" type="submit">送出問題</button>
+            <button class="secondary" id="sampleAskBtn" type="button">使用範例問題</button>
+          </div>
+        </form>
+
+        <div class="grid-2">
+          <dl class="glossary">
+            <dt>answer</dt>
+            <dd>LLM 生成的回答。mock 模式是固定教學模板，不是真模型推理。</dd>
+            <dt>sources</dt>
+            <dd>RAG 檢索到的筆記列表。若為空，代表向量庫還沒資料或問題與筆記無關。</dd>
+            <dt>provider</dt>
+            <dd>目前 LLM 提供者：<code>mock</code> / <code>ollama</code> / <code>openai</code></dd>
+          </dl>
+          <div class="callout success">
+            <strong>新手檢查清單</strong><br />
+            ✓ sources 是否包含相關筆記？<br />
+            ✓ 新建筆記後，再問同一主題，sources 是否變化？<br />
+            ✓ 切換到 openai/ollama 後，answer 會更像自然語言
+          </div>
+        </div>
+
+        <h3>API 回傳（原始 JSON）</h3>
+        <div id="askResult" class="result-box">尚未提问。</div>
+        <h3>來源筆記（sources）</h3>
+        <div id="sourcesList" class="note-list"></div>
+      </section>
+
+      <section class="panel" id="step-webhook">
+        <h2>Step 3 · WebHook（POST /webhooks）</h2>
+        <p class="lead">
+          當你建立筆記或完成問答，後端會把事件 POST 到你註冊的 URL。建議先用
+          <a href="https://webhook.site" target="_blank" rel="noreferrer">webhook.site</a> 取得測試 URL。
+        </p>
+
+        <form id="webhookForm">
+          <div class="field">
+            <label for="webhookUrl">WebHook URL（在這裡貼 webhook.site 連結）</label>
+            <input id="webhookUrl" name="url" placeholder="https://webhook.site/你的-id" required />
+          </div>
+          <div class="field">
+            <label for="eventTypes">事件類型（逗號分隔，或 * 代表全部）</label>
+            <input id="eventTypes" name="event_types" value="note.created,ask.completed" />
+          </div>
+          <div class="actions">
+            <button class="primary" type="submit">註冊 WebHook</button>
+            <button class="secondary" id="loadEventsBtn" type="button">查看事件紀錄</button>
+          </div>
+        </form>
+
+        <div class="callout info">
+          <strong>預期結果：</strong>註冊後，去 Step 1 建立筆記或 Step 2 提問，webhook.site 應收到 JSON 事件。
+        </div>
+
+        <div id="webhookResult" class="result-box">尚未註冊 WebHook。</div>
+        <h3>最近事件（GET /events）</h3>
+        <div id="eventsList" class="event-list"></div>
+      </section>
+    </div>
+
+    <script src="/static/js/learn.js"></script>
+  </body>
+</html>

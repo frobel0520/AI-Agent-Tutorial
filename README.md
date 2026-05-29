@@ -30,7 +30,8 @@ python src\run.py
 
 開啟：
 
-- Swagger UI: http://localhost:8000/docs
+- **新手學習台（推薦）**: http://localhost:8000/learn
+- Swagger UI（進階）: http://localhost:8000/docs
 - Health: http://localhost:8000/health
 
 ## 第一次實驗（5 分鐘）
