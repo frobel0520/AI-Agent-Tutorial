@@ -1,0 +1,23 @@
+# Render blueprint — https://render.com
+# 1. Connect GitHub repo
+# 2. Render detects this file and creates a web service
+# 3. Set env vars in dashboard: LLM_PROVIDER=mock (or openai + OPENAI_API_KEY)
+
+services:
+  - type: web
+    name: ai-agent-tutorial
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_PROVIDER
+        value: mock
+      - key: APP_ENV
+        value: production
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///./data/app.db
+      - key: CHROMA_DIR
+        value: ./data/chroma
