@@ -58,12 +58,27 @@ class WebhookDelivery(Base):
     event: Mapped[EventLog] = relationship(back_populates="deliveries")
 
 
-settings = get_settings()
-settings.data_dir.mkdir(parents=True, exist_ok=True)
-settings.chroma_path.mkdir(parents=True, exist_ok=True)
+def _create_engine():
+    settings = get_settings()
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    settings.chroma_path.mkdir(parents=True, exist_ok=True)
 
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-engine = create_engine(settings.database_url, connect_args=connect_args)
+    connect_args: dict = {}
+    engine_kwargs: dict = {"pool_pre_ping": True}
+
+    if settings.storage_backend == "sqlite":
+        connect_args["check_same_thread"] = False
+    else:
+        connect_args["sslmode"] = "require"
+
+    return create_engine(
+        settings.sqlalchemy_database_url,
+        connect_args=connect_args,
+        **engine_kwargs,
+    )
+
+
+engine = _create_engine()
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 

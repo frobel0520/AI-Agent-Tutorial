@@ -12,7 +12,7 @@ from app.config import Settings, get_settings
 from app.database import Note, SessionLocal, init_db
 from app.routers import ask, notes, webhooks
 from app.schemas import HealthResponse
-from app.services.langchain_rag import RagService
+from app.services.langchain_rag import RagService, rebuild_chroma_index
 
 logger = logging.getLogger(__name__)
 _seed_lock = asyncio.Lock()
@@ -24,7 +24,10 @@ def seed_notes(settings: Settings) -> None:
     global _seed_done
     db = SessionLocal()
     try:
-        if db.query(Note).count() > 0:
+        existing_notes = db.query(Note).order_by(Note.id.asc()).all()
+        if existing_notes:
+            rebuilt = rebuild_chroma_index(settings, existing_notes)
+            logger.info("Restored Chroma index from %s notes", rebuilt)
             _seed_done = True
             return
         samples = [
@@ -122,6 +125,8 @@ def create_app() -> FastAPI:
             app_name=settings.app_name,
             llm_provider=settings.llm_provider,
             docs_url="/docs",
+            storage=settings.storage_backend,
+            persistent_data=settings.persistent_data,
         )
 
     return app

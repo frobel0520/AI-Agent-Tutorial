@@ -18,6 +18,6 @@ services:
       - key: WEBHOOK_SECRET
         generateValue: true
       - key: DATABASE_URL
-        value: sqlite:///./data/app.db
+        sync: false
       - key: CHROMA_DIR
         value: ./data/chroma

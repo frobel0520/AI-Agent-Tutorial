@@ -64,6 +64,8 @@ class HealthResponse(BaseModel):
     app_name: str
     llm_provider: str
     docs_url: str
+    storage: str = Field(description="sqlite or postgres")
+    persistent_data: bool = Field(description="True when using Supabase/Postgres")
 
 
 class DifyAskRequest(BaseModel):
