@@ -69,6 +69,7 @@ class HealthResponse(BaseModel):
     llm_ready: bool = Field(default=True, description="False when Ollama is configured but unreachable")
     ollama_model: str | None = None
     ollama_base_url: str | None = None
+    dify_configured: bool = Field(default=False, description="True when DIFY_API_KEY is set")
 
 
 class DifyAskRequest(BaseModel):

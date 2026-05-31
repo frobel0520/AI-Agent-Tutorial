@@ -3,6 +3,8 @@ const API_BASE = window.location.origin;
 const statusBanner = document.getElementById("statusBanner");
 const providerCallout = document.getElementById("providerCallout");
 const mockExplain = document.getElementById("mockExplain");
+const difyExplain = document.getElementById("difyExplain");
+const difySubmitBtn = document.getElementById("difySubmitBtn");
 
 function showBanner(message, isError = false) {
   statusBanner.textContent = message;
@@ -107,6 +109,14 @@ async function loadHealth() {
             : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
       }
     `;
+    if (difyExplain) {
+      difyExplain.innerHTML = health.dify_configured
+        ? "<strong>Dify 已設定</strong>（<code>DIFY_API_KEY</code> 存在）。可直接在下方提問；若 502 請確認 Dify Docker 容器在跑。"
+        : "<strong>Dify 尚未設定</strong>。請執行 <code>.\\scripts\\setup-dify.ps1</code>，在 Dify 後台建立 Chat App 並將 API Key 寫入 <code>.env</code> 的 <code>DIFY_API_KEY</code>，然後重啟 API。";
+    }
+    if (difySubmitBtn) {
+      difySubmitBtn.disabled = !health.dify_configured;
+    }
     showBanner("已連線到後端 API，可以開始 Step 1。");
   } catch (error) {
     providerCallout.innerHTML = `<strong>連線失敗</strong>：${escapeHtml(error.message)}。Render 冷啟動請等 30～60 秒後再按「重新檢查連線」。`;
@@ -203,6 +213,28 @@ document.getElementById("loadEventsBtn").addEventListener("click", async () => {
   } catch (error) {
     showBanner(error.message, true);
   }
+});
+
+document.getElementById("difyForm")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const question = document.getElementById("difyQuestionInput").value.trim();
+  const difyResult = document.getElementById("difyResult");
+
+  try {
+    const answer = await api("/dify/ask", {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    });
+    difyResult.textContent = prettyJson(answer);
+    showBanner(`Dify 問答完成（provider=${answer.provider}）。`);
+  } catch (error) {
+    difyResult.textContent = error.message;
+    showBanner(error.message, true);
+  }
+});
+
+document.getElementById("sampleDifyBtn")?.addEventListener("click", () => {
+  document.getElementById("difyQuestionInput").value = "REST 的 GET 是做什麼？";
 });
 
 document.querySelectorAll(".step-link").forEach((link) => {

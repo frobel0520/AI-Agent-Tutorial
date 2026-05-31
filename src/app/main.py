@@ -132,6 +132,7 @@ def create_app() -> FastAPI:
             llm_ready=llm_ready,
             ollama_model=settings.ollama_model if settings.llm_provider.lower() == "ollama" else None,
             ollama_base_url=settings.ollama_base_url if settings.llm_provider.lower() == "ollama" else None,
+            dify_configured=settings.dify_configured,
         )
 
     return app
