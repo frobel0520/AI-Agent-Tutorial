@@ -100,7 +100,11 @@ async function loadHealth() {
       ${
         health.llm_provider === "mock"
           ? "你會看到 <code>[Mock LLM]</code> 開頭的回答；請重點觀察 <code>sources</code> 是否正確。"
-          : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
+          : health.llm_provider === "ollama"
+            ? health.llm_ready
+              ? `Ollama 已就緒（模型 <code>${escapeHtml(health.ollama_model || "unknown")}</code>）。回答應為自然語句，且仍有 <code>sources</code>。`
+              : "Ollama 尚未就緒。請在本機執行 <code>docker compose up -d ollama</code> 並 <code>ollama pull llama3.2</code>。詳見 deploy/ollama-setup.md"
+            : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
       }
     `;
     showBanner("已連線到後端 API，可以開始 Step 1。");
