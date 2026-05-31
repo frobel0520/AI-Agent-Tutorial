@@ -47,6 +47,7 @@ def test_health(client: TestClient) -> None:
     assert body["llm_provider"] == "mock"
     assert body["storage"] == "sqlite"
     assert body["persistent_data"] is False
+    assert body["llm_ready"] is True
 
 
 def test_notes_crud_and_ask(client: TestClient) -> None:
