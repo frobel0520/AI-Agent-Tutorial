@@ -79,3 +79,9 @@ def test_webhook_registration_and_events(client: TestClient) -> None:
     events = client.get("/events")
     assert events.status_code == 200
     assert isinstance(events.json(), list)
+
+
+def test_dify_ask_requires_api_key(client: TestClient) -> None:
+    response = client.post("/dify/ask", json={"question": "Hello Dify?"})
+    assert response.status_code == 400
+    assert "DIFY_API_KEY" in response.json()["detail"]

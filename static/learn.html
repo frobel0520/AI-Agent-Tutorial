@@ -11,7 +11,7 @@
 
     <div class="layout">
       <header class="topbar">
-        <div class="badge">🎓 新手學習台 · RAG / REST / WebHook</div>
+        <div class="badge">🎓 新手學習台 · RAG / REST / WebHook / Dify</div>
         <div class="actions">
           <a class="button secondary" href="/docs" target="_blank" rel="noreferrer">進階：Swagger API</a>
           <button id="refreshHealthBtn" class="button secondary" type="button">重新檢查連線</button>
@@ -32,6 +32,7 @@
           <a class="step-link" href="#step-notes" data-step="notes"><span class="num">1</span><div>建立筆記 (REST)</div></a>
           <a class="step-link" href="#step-rag" data-step="rag"><span class="num">2</span><div>RAG 問答 (LangChain)</div></a>
           <a class="step-link" href="#step-webhook" data-step="webhook"><span class="num">3</span><div>WebHook 事件</div></a>
+          <a class="step-link" href="#step-dify" data-step="dify"><span class="num">4</span><div>Dify 問答</div></a>
         </nav>
       </section>
 
@@ -180,6 +181,48 @@
         <div id="webhookResult" class="result-box">尚未註冊 WebHook。</div>
         <h3>最近事件（GET /events）</h3>
         <div id="eventsList" class="event-list"></div>
+      </section>
+
+      <section class="panel" id="step-dify">
+        <h2>Step 4 · Dify 問答（POST /dify/ask）</h2>
+        <p class="lead">
+          Dify 是<strong>視覺化 LLM 平台</strong>：在後台拖 workflow、建知識庫，再透過 API 呼叫。本步驟與 Step 2 的 LangChain
+          <code>/ask</code> 對照——前者走 Python 程式碼 + Chroma，後者走 Dify 後台編排。
+        </p>
+
+        <div class="callout warn" id="difyExplain">
+          正在檢查 Dify 設定…
+        </div>
+
+        <div class="grid-2">
+          <dl class="glossary">
+            <dt>LangChain /ask</dt>
+            <dd>本專案程式碼編排，回傳 <code>sources</code>（Chroma 檢索筆記）。</dd>
+            <dt>Dify /dify/ask</dt>
+            <dd>轉發到 Dify Chat App，回傳 <code>answer</code> 與 <code>raw</code>（Dify 原始 JSON）。</dd>
+            <dt>前置</dt>
+            <dd>需本機 Docker 跑 Dify 並在 <code>.env</code> 設定 <code>DIFY_API_KEY</code>。見 deploy/dify-setup.md。</dd>
+          </dl>
+          <div class="callout info">
+            <strong>安裝 Dify（首次）</strong><br />
+            <code>.\scripts\setup-dify.ps1</code><br />
+            瀏覽器 http://localhost/install → 建 Chat App → 複製 API Key
+          </div>
+        </div>
+
+        <form id="difyForm">
+          <div class="field">
+            <label for="difyQuestionInput">問題（會送到 Dify，不經 Chroma）</label>
+            <input id="difyQuestionInput" name="question" placeholder="例如：REST 的 GET 是做什麼？" required />
+          </div>
+          <div class="actions">
+            <button class="primary" type="submit" id="difySubmitBtn">送到 Dify</button>
+            <button class="secondary" id="sampleDifyBtn" type="button">使用範例問題</button>
+          </div>
+        </form>
+
+        <h3>API 回傳（原始 JSON）</h3>
+        <div id="difyResult" class="result-box">尚未呼叫 Dify。</div>
       </section>
     </div>
 

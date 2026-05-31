@@ -29,7 +29,10 @@ class Settings(BaseSettings):
 
     dify_api_base: str = "http://localhost/v1"
     dify_api_key: str = ""
-    dify_app_id: str = ""
+
+    @property
+    def dify_configured(self) -> bool:
+        return bool(self.dify_api_key.strip())
 
     @property
     def data_dir(self) -> Path:

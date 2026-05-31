@@ -5,9 +5,9 @@ from app.schemas import DifyAskResponse
 
 
 async def ask_dify(settings: Settings, question: str, user: str) -> DifyAskResponse:
-    if not settings.dify_api_key or not settings.dify_app_id:
+    if not settings.dify_api_key:
         raise ValueError(
-            "DIFY_API_KEY and DIFY_APP_ID must be configured. See docs/04-dify.md."
+            "DIFY_API_KEY must be configured. See docs/04-dify.md and deploy/dify-setup.md."
         )
 
     url = f"{settings.dify_api_base.rstrip('/')}/chat-messages"
