@@ -83,6 +83,7 @@ API：`http://localhost:8000/learn`
 | 第一次 `/ask` 很慢 | 模型載入中，等 30～60 秒再試 |
 | Render 想用 Ollama | 不行連本機；請用 OpenAI 或另架 Ollama 伺服器 |
 | 記憶體不足 | 改用小模型 `llama3.2:1b` |
+| `embedding ... dimension of 384, got 3072` | 從 mock 切到 ollama 的向量維度不同；重啟 API 即可（已自動分 collection）。仍失敗時刪除 `data\chroma` 資料夾後重跑 |
 
 ---
 

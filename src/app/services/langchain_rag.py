@@ -11,16 +11,27 @@ from app.schemas import AskResponse, NoteRead
 from app.services.llm_factory import build_chat_model, build_embeddings
 
 
+def chroma_collection_name(settings: Settings) -> str:
+    # Separate collections per LLM provider because embedding dimensions differ
+    # (mock=384, ollama=3072, openai=1536).
+    return f"tutorial_notes_{settings.llm_provider.lower()}"
+
+
 class RagService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.embeddings = build_embeddings(settings)
         self.chat_model = build_chat_model(settings)
         self.vector_store = Chroma(
-            collection_name="tutorial_notes",
+            collection_name=chroma_collection_name(settings),
             embedding_function=self.embeddings,
             persist_directory=str(settings.chroma_path),
         )
+
+    def _reset_collection(self) -> None:
+        existing = self.vector_store.get()
+        if existing and existing.get("ids"):
+            self.vector_store.delete(ids=existing["ids"])
 
     def sync_note(self, note: Note) -> None:
         document = Document(
@@ -30,7 +41,13 @@ class RagService:
         existing = self.vector_store.get(where={"note_id": note.id})
         if existing and existing.get("ids"):
             self.vector_store.delete(ids=existing["ids"])
-        self.vector_store.add_documents([document], ids=[f"note-{note.id}"])
+        try:
+            self.vector_store.add_documents([document], ids=[f"note-{note.id}"])
+        except Exception as exc:
+            if "dimension" not in str(exc).lower():
+                raise
+            self._reset_collection()
+            self.vector_store.add_documents([document], ids=[f"note-{note.id}"])
 
     def remove_note(self, note_id: int) -> None:
         existing = self.vector_store.get(where={"note_id": note_id})
