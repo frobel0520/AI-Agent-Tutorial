@@ -99,14 +99,45 @@ python src\run.py
 
 ---
 
-## 下一步（Phase 3 完成後）
+## 下一步
 
-Phase 3 已驗收。可選後續：
+**主要目標：線上 `/learn` Step 4（Dify）可用**
 
-1. **對照教學**：同一問題分別打 `/ask` 與 `/dify/ask`，比較 `sources` vs `raw`
-2. **學習台**：http://localhost:8000/learn → Step 4
-3. **推送 GitHub**：`git push origin main`（Render 雲端 `/dify/ask` 仍無法連本機 Dify，可維持未設定）
-4. **可選**：Dify Knowledge 建知識庫，與 LangChain Chroma 對照
+1. Dify **部署到公網**（VPS / 雲端 Docker；Render 無法連本機 `localhost`）
+2. Render Dashboard 設定 `DIFY_API_BASE`、`DIFY_API_KEY`（雲端 Dify 的 API）
+3. Dify 內建 **雲端 LLM provider**（OpenAI 等；不能用本機 Ollama）
+4. 驗收 https://ai-agent-tutorial.onrender.com/learn Step 4
+
+**目前上線狀態（2026-05-31）：**
+
+- Step 4 UI 已部署；`/health` 的 `dify_configured: false`（Render 未設 DIFY_*）
+- 本機 Step 4 + `/dify/ask` 已驗收通過
+
+**可選：**
+
+- 同一問題對照 `/ask` vs `/dify/ask`
+- Dify Knowledge 與 LangChain Chroma 對照
+
+---
+
+## Context 交接（新對話用）
+
+長對話或下一指令可能耗盡 context 時，Agent 會更新本檔並請你**開新 Chat**。
+
+**新 Chat 開場白（複製貼上）：**
+
+```
+專案：C:\Users\ytwei\Projects\AI-Agent-Tutorial
+請先讀 @deploy/PROGRESS.md
+
+已完成：Render、Supabase、/learn Step 1–4 UI、本機 Ollama RAG、本機 Dify /dify/ask。
+上線版 Step 4 尚未接通 Dify（dify_configured: false）。
+請用繁體中文。
+
+下一步：Dify 雲端部署 + Render 環境變數，讓線上 Step 4 可用。
+```
+
+規則詳見 `.cursor/rules/context-handoff.mdc`。
 
 ---
 
@@ -125,15 +156,7 @@ git push origin main                 # 推送後 Render 自動 deploy
 
 ## 新對話開場白（複製貼上）
 
-```
-專案：C:\Users\ytwei\Projects\AI-Agent-Tutorial
-請先讀 @deploy/PROGRESS.md
-
-已完成：Render、Supabase、/learn、Ollama RAG、Dify /dify/ask 本機驗收通過。
-請用繁體中文。
-
-下一步：Dify Phase 3（Docker 自架 + 打通 /dify/ask）。
-```
+見上方 **Context 交接** 區塊（會隨 PROGRESS 更新）。
 
 ---
 
@@ -146,4 +169,4 @@ git push origin main                 # 推送後 Render 自動 deploy
 
 ---
 
-*最後更新：2026-05-31（Dify Phase 3 /dify/ask 驗收完成）*
+*最後更新：2026-05-31（push Step 4；設定 context 交接規則；下一步：線上 Dify）*
