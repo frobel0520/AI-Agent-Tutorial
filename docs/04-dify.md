@@ -28,10 +28,15 @@ DIFY_API_BASE=http://localhost/v1
 DIFY_API_KEY=app-xxxxxxxx
 ```
 
-Swagger 呼叫：
+重啟 API 後，Swagger 呼叫：
 
 - `POST /dify/ask`
 - body: `{"question": "REST 的 GET 是做什麼？"}`
+
+或開啟學習台 **Step 4** 直接操作。
+
+一鍵安裝腳本：`.\scripts\setup-dify.ps1`  
+詳細步驟見 `deploy/dify-setup.md`。
 
 ## 與 LangChain 路線對照
 
