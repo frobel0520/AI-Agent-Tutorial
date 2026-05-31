@@ -66,6 +66,9 @@ class HealthResponse(BaseModel):
     docs_url: str
     storage: str = Field(description="sqlite or postgres")
     persistent_data: bool = Field(description="True when using Supabase/Postgres")
+    llm_ready: bool = Field(default=True, description="False when Ollama is configured but unreachable")
+    ollama_model: str | None = None
+    ollama_base_url: str | None = None
 
 
 class DifyAskRequest(BaseModel):

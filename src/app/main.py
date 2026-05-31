@@ -13,6 +13,7 @@ from app.database import Note, SessionLocal, init_db
 from app.routers import ask, notes, webhooks
 from app.schemas import HealthResponse
 from app.services.langchain_rag import RagService, rebuild_chroma_index
+from app.services.ollama_health import check_ollama_ready
 
 logger = logging.getLogger(__name__)
 _seed_lock = asyncio.Lock()
@@ -120,13 +121,17 @@ def create_app() -> FastAPI:
 
     @app.get("/health", response_model=HealthResponse, tags=["system"])
     def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
+        llm_ready = check_ollama_ready(settings)
         return HealthResponse(
-            status="ok",
+            status="ok" if llm_ready or settings.llm_provider.lower() != "ollama" else "degraded",
             app_name=settings.app_name,
             llm_provider=settings.llm_provider,
             docs_url="/docs",
             storage=settings.storage_backend,
             persistent_data=settings.persistent_data,
+            llm_ready=llm_ready,
+            ollama_model=settings.ollama_model if settings.llm_provider.lower() == "ollama" else None,
+            ollama_base_url=settings.ollama_base_url if settings.llm_provider.lower() == "ollama" else None,
         )
 
     return app

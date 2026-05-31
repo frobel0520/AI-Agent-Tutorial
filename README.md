@@ -125,8 +125,9 @@ render.yaml
 
 1. 完成 Phase 1 的 Swagger 練習
 2. 用 webhook.site 完成 Phase 2
-3. Docker 跑 Dify，打通 `/dify/ask`
-4. 取得 OpenAI key 後切 `LLM_PROVIDER=openai` 並 redeploy
+3. **本機 Ollama 真實 LLM**：見 [deploy/ollama-setup.md](deploy/ollama-setup.md)
+4. Docker 跑 Dify，打通 `/dify/ask`
+5. 雲端取得 OpenAI key 後切 `LLM_PROVIDER=openai` 並 redeploy
 
 ## License
 
