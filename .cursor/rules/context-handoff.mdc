@@ -1,0 +1,30 @@
+---
+description: Context 快滿時主動交接至新對話，更新 PROGRESS.md 並提供開場白
+alwaysApply: true
+---
+
+# Context Window 交接協定
+
+## 何時觸發（自行判斷，符合任一即應交接）
+
+- 對話已很長（多輪實作、大量檔案讀取、長 log / 多工具呼叫）
+- **下一個指令**可能需：大範圍探索、多檔修改、長時間 debug、部署驗收、或再讀許多檔案
+- 使用者將開始**新 Phase / 新主題**（架構決策、雲端部署等）
+- 你發現需反覆引用早期對話細節，且 `deploy/PROGRESS.md` 尚未反映現況
+
+## 觸發時必做（本回合結束前）
+
+1. **更新** `deploy/PROGRESS.md`：已完成、進行中、下一步、已知限制、環境要點（**勿寫密碼 / API Key**）
+2. **不要**在未要求時 commit；若本回合有 push 相關變更，在 PROGRESS 註記
+3. 回覆使用者一段可直接貼到新 Chat 的 **「新對話開場白」**（含 `@deploy/PROGRESS.md`）
+4. 明確請使用者 **開新對話** 並貼上開場白；說明舊對話 context 已飽和，新 Chat 較穩
+
+## 新 Chat 第一句（Agent 收到後）
+
+1. 先讀 `@deploy/PROGRESS.md`
+2. 用繁體中文接續「下一步」，最小改動延續開發
+
+## 限制
+
+- Agent **無法**代使用者自動開新 Cursor Chat；以更新 PROGRESS + 提供開場白代替
+- 交接優先寫入 PROGRESS，勿在規則或 PROGRESS 中記錄 secrets
