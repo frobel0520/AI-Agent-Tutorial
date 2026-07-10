@@ -51,6 +51,7 @@ def build_embeddings(settings: Settings) -> Embeddings:
             base_url=settings.ollama_base_url,
             model=settings.ollama_model,
         )
+    # groq has no embeddings API; falls through to FakeEmbeddings like mock.
     return FakeEmbeddings(size=384)
 
 
@@ -70,6 +71,15 @@ def build_chat_model(settings: Settings) -> BaseChatModel:
         return ChatGoogleGenerativeAI(
             model=settings.gemini_model,
             google_api_key=settings.google_api_key,
+            temperature=0.2,
+        )
+    if provider == "groq":
+        if not settings.groq_api_key:
+            raise ValueError("GROQ_API_KEY is required when LLM_PROVIDER=groq")
+        return ChatOpenAI(
+            api_key=settings.groq_api_key,
+            base_url="https://api.groq.com/openai/v1",
+            model=settings.groq_model,
             temperature=0.2,
         )
     if provider == "ollama":

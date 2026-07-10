@@ -1,7 +1,7 @@
 # Render blueprint — https://render.com
 # 1. Connect GitHub repo
 # 2. Render detects this file and creates a web service
-# 3. Set GOOGLE_API_KEY in dashboard (Environment tab) — see deploy/free-llm-cloud.md
+# 3. Set GROQ_API_KEY in dashboard (Environment tab) — see deploy/free-llm-cloud.md
 
 services:
   - type: web
@@ -12,13 +12,17 @@ services:
     healthCheckPath: /health
     envVars:
       - key: LLM_PROVIDER
-        value: gemini
+        value: groq
       - key: APP_ENV
         value: production
       - key: WEBHOOK_SECRET
         generateValue: true
       - key: DATABASE_URL
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
       - key: GOOGLE_API_KEY
         sync: false
       - key: GEMINI_MODEL
