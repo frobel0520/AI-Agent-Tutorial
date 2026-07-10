@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # Free cloud tier for Render (https://aistudio.google.com/apikey)
     google_api_key: str = ""
     gemini_model: str = "gemini-3.5-flash"
+    # Free, stable OpenAI-compatible cloud tier (https://console.groq.com/keys)
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2"
 
@@ -47,6 +50,8 @@ class Settings(BaseSettings):
             return bool(self.openai_api_key.strip())
         if provider == "gemini":
             return bool(self.google_api_key.strip())
+        if provider == "groq":
+            return bool(self.groq_api_key.strip())
         if provider == "mock":
             return True
         return False
