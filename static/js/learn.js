@@ -110,7 +110,11 @@ async function loadHealth() {
               ? health.llm_ready
                 ? "Gemini 雲端 LLM 已就緒。回答應為自然語句（實境教學），且仍有 <code>sources</code>。"
                 : "Gemini 尚未設定。Render 請設 <code>GOOGLE_API_KEY</code>，見 deploy/free-llm-cloud.md"
-              : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
+              : health.llm_provider === "groq"
+                ? health.llm_ready
+                  ? "Groq 雲端 LLM 已就緒。回答應為自然語句（實境教學），且仍有 <code>sources</code>（本模式的檢索用簡易向量，非語意搜尋）。"
+                  : "Groq 尚未設定。Render 請設 <code>GROQ_API_KEY</code>，見 deploy/free-llm-cloud.md"
+                : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
       }
     `;
     if (difyExplain) {
