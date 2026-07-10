@@ -13,7 +13,7 @@ from app.services.llm_factory import build_chat_model, build_embeddings
 
 def chroma_collection_name(settings: Settings) -> str:
     # Separate collections per LLM provider because embedding dimensions differ
-    # (mock=384, gemini=768, ollama=3072, openai=1536).
+    # (mock=384, gemini=3072, ollama=3072, openai=1536).
     return f"tutorial_notes_{settings.llm_provider.lower()}"
 
 
