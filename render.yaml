@@ -1,7 +1,7 @@
 # Render blueprint — https://render.com
 # 1. Connect GitHub repo
 # 2. Render detects this file and creates a web service
-# 3. Set env vars in dashboard: LLM_PROVIDER=mock (or openai + OPENAI_API_KEY)
+# 3. Set GOOGLE_API_KEY in dashboard (Environment tab) — see deploy/free-llm-cloud.md
 
 services:
   - type: web
@@ -12,12 +12,16 @@ services:
     healthCheckPath: /health
     envVars:
       - key: LLM_PROVIDER
-        value: mock
+        value: gemini
       - key: APP_ENV
         value: production
       - key: WEBHOOK_SECRET
         generateValue: true
       - key: DATABASE_URL
         sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
       - key: CHROMA_DIR
         value: ./data/chroma
