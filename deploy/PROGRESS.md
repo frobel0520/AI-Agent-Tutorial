@@ -125,7 +125,7 @@ python src\run.py
 
 **程式已就緒：** `LLM_PROVIDER=groq`、`gemini` 保留備用、Tunnel 腳本、文件；**尚未**代設 Render 的 `GROQ_API_KEY`（需你貼 Key）。
 
-**已加：** `.github/workflows/keep-alive.yml` 每 10 分鐘 ping `/health`，避免 Render 免費 tier 閒置後需手動 Activate。
+**已加：** `.github/workflows/keep-alive.yml` 每 10 分鐘 ping `/health`（喚醒 Render）+ `GET /notes`（查詢 DB，避免 **Supabase 免費 tier 7 天無活動自動 pause**——`/health` 本身不碰 DB，先前只 ping 它並沒有解決 Supabase 的問題；資料庫裡本來就有一筆 2026-06-07 的「活躍測試」筆記提醒這件事，這次才把它接上自動化）。
 
 **可選：** Oracle Cloud 24/7 自架 Dify（`deploy/dify-cloud-setup.md` 進階章節）
 

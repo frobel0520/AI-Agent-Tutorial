@@ -1,4 +1,4 @@
-name: Keep Render Alive
+name: Keep Render + Supabase Alive
 
 on:
   schedule:
@@ -9,5 +9,7 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping /health
+      - name: Ping /health (keeps Render awake)
         run: curl -fsS --max-time 30 --retry 2 "https://ai-agent-tutorial.onrender.com/health"
+      - name: Ping /notes (queries DB, keeps Supabase free-tier project active)
+        run: curl -fsS --max-time 30 --retry 2 "https://ai-agent-tutorial.onrender.com/notes"
