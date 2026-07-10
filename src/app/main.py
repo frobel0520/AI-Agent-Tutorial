@@ -121,9 +121,12 @@ def create_app() -> FastAPI:
 
     @app.get("/health", response_model=HealthResponse, tags=["system"])
     def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
-        llm_ready = check_ollama_ready(settings)
+        if settings.llm_provider.lower() == "ollama":
+            llm_ready = check_ollama_ready(settings)
+        else:
+            llm_ready = settings.llm_ready
         return HealthResponse(
-            status="ok" if llm_ready or settings.llm_provider.lower() != "ollama" else "degraded",
+            status="ok" if llm_ready else "degraded",
             app_name=settings.app_name,
             llm_provider=settings.llm_provider,
             docs_url="/docs",

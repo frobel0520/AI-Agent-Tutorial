@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     llm_provider: str = "mock"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    # Free cloud tier for Render (https://aistudio.google.com/apikey)
+    google_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2"
 
@@ -33,6 +36,20 @@ class Settings(BaseSettings):
     @property
     def dify_configured(self) -> bool:
         return bool(self.dify_api_key.strip())
+
+    @property
+    def llm_ready(self) -> bool:
+        """Whether the configured LLM provider can serve requests."""
+        provider = self.llm_provider.lower()
+        if provider == "ollama":
+            return True  # checked separately via HTTP
+        if provider == "openai":
+            return bool(self.openai_api_key.strip())
+        if provider == "gemini":
+            return bool(self.google_api_key.strip())
+        if provider == "mock":
+            return True
+        return False
 
     @property
     def data_dir(self) -> Path:

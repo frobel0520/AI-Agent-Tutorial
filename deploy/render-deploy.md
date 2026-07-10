@@ -76,13 +76,15 @@ Invoke-RestMethod https://ai-agent-tutorial.onrender.com/health
 | 502 / 無回應 | 免費 tier 冷啟動，稍等再試 |
 | 資料消失 | 免費 tier disk 非永久；demo 可接受，正式可改 Postgres |
 
-## 之後切換真實 LLM
+## 零預算真實 LLM（推薦）
 
-Render Dashboard → Environment：
+見 `deploy/free-llm-cloud.md`：
 
 ```env
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
+LLM_PROVIDER=gemini
+GOOGLE_API_KEY=...
 ```
 
-儲存後會自動 redeploy。
+## Dify Step 4 上線
+
+見 `deploy/dify-cloud-setup.md`（Cloudflare Tunnel + Render `DIFY_*`）。

@@ -81,7 +81,12 @@ def test_webhook_registration_and_events(client: TestClient) -> None:
     assert isinstance(events.json(), list)
 
 
-def test_dify_ask_requires_api_key(client: TestClient) -> None:
+def test_dify_ask_requires_api_key(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DIFY_API_KEY", "")
+    from app.config import get_settings
+
+    get_settings.cache_clear()
     response = client.post("/dify/ask", json={"question": "Hello Dify?"})
+    get_settings.cache_clear()
     assert response.status_code == 400
     assert "DIFY_API_KEY" in response.json()["detail"]
