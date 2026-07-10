@@ -43,7 +43,7 @@ def build_embeddings(settings: Settings) -> Embeddings:
         if not settings.google_api_key:
             raise ValueError("GOOGLE_API_KEY is required when LLM_PROVIDER=gemini")
         return GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
+            model="models/text-embedding-004",
             google_api_key=settings.google_api_key,
         )
     if provider == "ollama":
