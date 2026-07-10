@@ -1,0 +1,20 @@
+---
+description: 每個對話結束前撰寫開發日誌至 deploy/dev-logs/
+alwaysApply: true
+---
+
+# 開發日誌（對話結束）
+
+每個對話結束時，撰寫開發日誌並存入專案。
+
+## 結束前必做（與 context 交接可同回合）
+
+1. 新增或更新 `deploy/dev-logs/YYYY-MM-DD-session-NN-<slug>.md`（格式見 `deploy/dev-logs/README.md`）
+2. 內容含：本次完成、進行中、決策、阻塞、**需鮪魚（使用者）決策／回覆**、下一對話建議
+3. 若有更新 `deploy/PROGRESS.md`，日誌中註明並與 PROGRESS「下一步」一致
+4. **勿寫** secrets；技術細節以 PROGRESS 為準，日誌偏協作與決策紀錄
+
+## 觸發方式
+
+- 對話收尾時直接產出日誌（或提示使用者補充編制議題）
+- 新對話開場仍可只 `@deploy/PROGRESS.md`；回顧脈絡可再加 `@deploy/dev-logs/` 最近一檔
