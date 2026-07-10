@@ -43,7 +43,7 @@ OLLAMA_MODEL=llama3.2
 ```env
 LLM_PROVIDER=gemini
 GOOGLE_API_KEY=...
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 詳見 `deploy/free-llm-cloud.md`。

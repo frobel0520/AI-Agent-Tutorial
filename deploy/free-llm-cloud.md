@@ -21,7 +21,7 @@ Render Dashboard → **ai-agent-tutorial** → **Environment**：
 |------|-----|
 | `LLM_PROVIDER` | `gemini` |
 | `GOOGLE_API_KEY` | 你的 Google AI Studio Key |
-| `GEMINI_MODEL` | `gemini-2.0-flash`（可省略，預設同此） |
+| `GEMINI_MODEL` | `gemini-2.5-flash`（可省略，預設同此；`2.0-flash` 已除役） |
 
 保留既有：
 
