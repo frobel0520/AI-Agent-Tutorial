@@ -120,7 +120,7 @@ async function loadHealth() {
     if (difyExplain) {
       difyExplain.innerHTML = health.dify_configured
         ? "<strong>Dify 已設定</strong>。可直接提問；若 502 請確認公網 Dify 可連（本機 Docker + Cloudflare Tunnel，或見 deploy/dify-cloud-setup.md）。"
-        : "本機：執行 <code>.\\scripts\\setup-dify.ps1</code> 並設 <code>DIFY_API_KEY</code>。線上 Render：另設 <code>DIFY_API_BASE</code>（Tunnel URL + <code>/v1</code>），見 deploy/dify-cloud-setup.md。";
+        : "<strong>Step 4 為本機示範功能</strong>，需自行跑 <code>.\\scripts\\setup-dify.ps1</code> 並設 <code>DIFY_API_KEY</code> 才能提問；線上 Render 版本預設不開放此步驟（見 docs/04-dify.md）。";
     }
     if (difySubmitBtn) {
       difySubmitBtn.disabled = !health.dify_configured;
