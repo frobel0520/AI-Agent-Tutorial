@@ -20,7 +20,8 @@
 |--------------|-------------|------|
 | `mock` | 否 | 先學 REST + RAG 流程 |
 | `ollama` | 否（本機 Docker） | 真實模型、無雲端費用 |
-| `openai` | 是 | 上線正式回答 |
+| `gemini` | 是（[AI Studio 免費](https://aistudio.google.com/apikey)） | Render 零預算真實 LLM |
+| `openai` | 是（付費） | 正式商用 |
 
 ### 切到 Ollama
 
@@ -36,6 +37,16 @@ LLM_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2
 ```
+
+### 切到 Gemini（Render 推薦）
+
+```env
+LLM_PROVIDER=gemini
+GOOGLE_API_KEY=...
+GEMINI_MODEL=gemini-2.0-flash
+```
+
+詳見 `deploy/free-llm-cloud.md`。
 
 ### 切到 OpenAI
 

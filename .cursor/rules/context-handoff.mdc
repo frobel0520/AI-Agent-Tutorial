@@ -7,6 +7,8 @@ alwaysApply: true
 
 ## 何時觸發（自行判斷，符合任一即應交接）
 
+**使用者偏好：context 約 70%～80% 就交接（保險區間）。** UI 顯示使用率達此區間應主動提議開新 Chat。
+
 - 對話已很長（多輪實作、大量檔案讀取、長 log / 多工具呼叫）
 - **下一個指令**可能需：大範圍探索、多檔修改、長時間 debug、部署驗收、或再讀許多檔案
 - 使用者將開始**新 Phase / 新主題**（架構決策、雲端部署等）
@@ -17,7 +19,7 @@ alwaysApply: true
 1. **更新** `deploy/PROGRESS.md`：已完成、進行中、下一步、已知限制、環境要點（**勿寫密碼 / API Key**）
 2. **不要**在未要求時 commit；若本回合有 push 相關變更，在 PROGRESS 註記
 3. 回覆使用者一段可直接貼到新 Chat 的 **「新對話開場白」**（含 `@deploy/PROGRESS.md`）
-4. 明確請使用者 **開新對話** 並貼上開場白；說明舊對話 context 已飽和，新 Chat 較穩
+4. 明確請使用者 **開新對話** 並貼上開場白；說明已達 **70%～80%** 保險交接區間
 
 ## 新 Chat 第一句（Agent 收到後）
 
@@ -28,3 +30,4 @@ alwaysApply: true
 
 - Agent **無法**代使用者自動開新 Cursor Chat；以更新 PROGRESS + 提供開場白代替
 - 交接優先寫入 PROGRESS，勿在規則或 PROGRESS 中記錄 secrets
+- 全專案通用版見 `~/.cursor/skills/context-handoff/SKILL.md` 與 `~/.cursor/rules/context-handoff.mdc`

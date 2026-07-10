@@ -106,13 +106,17 @@ async function loadHealth() {
             ? health.llm_ready
               ? `Ollama 已就緒（模型 <code>${escapeHtml(health.ollama_model || "unknown")}</code>）。回答應為自然語句，且仍有 <code>sources</code>。`
               : "Ollama 尚未就緒。請在本機執行 <code>docker compose up -d ollama</code> 並 <code>ollama pull llama3.2</code>。詳見 deploy/ollama-setup.md"
-            : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
+            : health.llm_provider === "gemini"
+              ? health.llm_ready
+                ? "Gemini 雲端 LLM 已就緒。回答應為自然語句（實境教學），且仍有 <code>sources</code>。"
+                : "Gemini 尚未設定。Render 請設 <code>GOOGLE_API_KEY</code>，見 deploy/free-llm-cloud.md"
+              : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
       }
     `;
     if (difyExplain) {
       difyExplain.innerHTML = health.dify_configured
-        ? "<strong>Dify 已設定</strong>（<code>DIFY_API_KEY</code> 存在）。可直接在下方提問；若 502 請確認 Dify Docker 容器在跑。"
-        : "<strong>Dify 尚未設定</strong>。請執行 <code>.\\scripts\\setup-dify.ps1</code>，在 Dify 後台建立 Chat App 並將 API Key 寫入 <code>.env</code> 的 <code>DIFY_API_KEY</code>，然後重啟 API。";
+        ? "<strong>Dify 已設定</strong>。可直接提問；若 502 請確認公網 Dify 可連（本機 Docker + Cloudflare Tunnel，或見 deploy/dify-cloud-setup.md）。"
+        : "本機：執行 <code>.\\scripts\\setup-dify.ps1</code> 並設 <code>DIFY_API_KEY</code>。線上 Render：另設 <code>DIFY_API_BASE</code>（Tunnel URL + <code>/v1</code>），見 deploy/dify-cloud-setup.md。";
     }
     if (difySubmitBtn) {
       difySubmitBtn.disabled = !health.dify_configured;

@@ -2,6 +2,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.embeddings import FakeEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
@@ -26,7 +27,7 @@ class MockChatModel(BaseChatModel):
         answer = (
             "[Mock LLM] Based on your notes, here is a tutorial-style answer. "
             f"Question: {user_text}. "
-            "Switch LLM_PROVIDER to ollama or openai when you are ready for real models."
+            "Switch LLM_PROVIDER to ollama, gemini, or openai when you are ready for real models."
         )
         generation = ChatGeneration(message=AIMessage(content=answer))
         return ChatResult(generations=[generation])
@@ -38,6 +39,13 @@ def build_embeddings(settings: Settings) -> Embeddings:
         if not settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
         return OpenAIEmbeddings(api_key=settings.openai_api_key)
+    if provider == "gemini":
+        if not settings.google_api_key:
+            raise ValueError("GOOGLE_API_KEY is required when LLM_PROVIDER=gemini")
+        return GoogleGenerativeAIEmbeddings(
+            model="models/embedding-001",
+            google_api_key=settings.google_api_key,
+        )
     if provider == "ollama":
         return OllamaEmbeddings(
             base_url=settings.ollama_base_url,
@@ -54,6 +62,14 @@ def build_chat_model(settings: Settings) -> BaseChatModel:
         return ChatOpenAI(
             api_key=settings.openai_api_key,
             model=settings.openai_model,
+            temperature=0.2,
+        )
+    if provider == "gemini":
+        if not settings.google_api_key:
+            raise ValueError("GOOGLE_API_KEY is required when LLM_PROVIDER=gemini")
+        return ChatGoogleGenerativeAI(
+            model=settings.gemini_model,
+            google_api_key=settings.google_api_key,
             temperature=0.2,
         )
     if provider == "ollama":
