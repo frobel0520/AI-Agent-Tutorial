@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI-Agent-Tutorial | 新手學習台</title>
-    <link rel="stylesheet" href="/static/css/learn.css" />
+    <link rel="stylesheet" href="./static/css/learn.css" />
   </head>
   <body>
     <div id="statusBanner" class="status-banner hidden"></div>
@@ -13,7 +13,14 @@
       <header class="topbar">
         <div class="badge">🎓 新手學習台 · RAG / REST / WebHook / Dify</div>
         <div class="actions">
-          <a class="button secondary" href="/docs" target="_blank" rel="noreferrer">進階：Swagger API</a>
+          <a
+            class="button secondary"
+            href="https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/docs"
+            target="_blank"
+            rel="noreferrer"
+          >
+            進階：API 教學文件
+          </a>
           <button id="refreshHealthBtn" class="button secondary" type="button">重新檢查連線</button>
         </div>
       </header>
@@ -39,7 +46,7 @@
       <section class="panel" id="step-start">
         <h2>Step 0 · 我該從哪裡輸入？</h2>
         <p class="lead">
-          在 Swagger 裡你要自己找 endpoint；在這裡，每個步驟都有<strong>輸入框 + 按鈕</strong>。你按「送出」後，畫面下方會顯示 API
+          在 API 文件裡你要自己找 endpoint；在這裡，每個步驟都有<strong>輸入框 + 按鈕</strong>。你按「送出」後，畫面下方會顯示 API
           回傳結果，並解釋每個欄位代表什麼。
         </p>
         <div class="grid-2">
@@ -50,8 +57,8 @@
             3. 到 Step 2 輸入問題並看 RAG 回答
           </div>
           <dl class="glossary">
-            <dt>這頁 vs Swagger</dt>
-            <dd>這頁 = 新手導覽；Swagger = 給已懂 REST 的人直接打 API。</dd>
+            <dt>這頁 vs API 文件</dt>
+            <dd>這頁 = 新手導覽；API 文件 = 給已懂 REST 的人直接理解 endpoint 與資料格式。</dd>
             <dt>我寫 code 在哪裡？</dt>
             <dd>後端在 GitHub repo 的 <code>src/app/services/langchain_rag.py</code>。先用 UI 理解流程，再對照程式碼。</dd>
           </dl>
@@ -61,7 +68,7 @@
       <section class="panel" id="step-notes">
         <h2>Step 1 · 建立筆記（REST POST /notes）</h2>
         <p class="lead">
-          RAG 需要「你的資料」。在這一步，你先新增筆記；後端會存進資料庫，並同步到向量資料庫（Chroma）。
+          RAG 需要「你的資料」。在這一步，你先新增筆記；後端會存進 Supabase，並在 Edge Function 內做輕量文字檢索。
         </p>
 
         <form id="noteForm">
@@ -187,7 +194,7 @@
         <h2>Step 4 · Dify 問答（POST /dify/ask）</h2>
         <p class="lead">
           Dify 是<strong>視覺化 LLM 平台</strong>：在後台拖 workflow、建知識庫，再透過 API 呼叫。本步驟與 Step 2 的 LangChain
-          <code>/ask</code> 對照——前者走 Python 程式碼 + Chroma，後者走 Dify 後台編排。
+          <code>/ask</code> 對照——前者走 Supabase Edge Function + 筆記檢索，後者走 Dify 後台編排。
         </p>
 
         <div class="callout warn" id="difyExplain">
@@ -197,11 +204,11 @@
         <div class="grid-2">
           <dl class="glossary">
             <dt>LangChain /ask</dt>
-            <dd>本專案程式碼編排，回傳 <code>sources</code>（Chroma 檢索筆記）。</dd>
+            <dd>本專案 Edge Function 編排，回傳 <code>sources</code>（筆記文字檢索結果）。</dd>
             <dt>Dify /dify/ask</dt>
             <dd>轉發到 Dify Chat App，回傳 <code>answer</code> 與 <code>raw</code>（Dify 原始 JSON）。</dd>
             <dt>前置</dt>
-            <dd>需本機 Docker 跑 Dify 並在 <code>.env</code> 設定 <code>DIFY_API_KEY</code>。見 deploy/dify-setup.md。</dd>
+            <dd>需在 Supabase Edge Function Secrets 設定 <code>DIFY_API_BASE</code> 與 <code>DIFY_API_KEY</code>。本機示範仍可使用 <code>.env</code>。</dd>
           </dl>
           <div class="callout info">
             <strong>安裝 Dify（首次）</strong><br />
@@ -226,6 +233,7 @@
       </section>
     </div>
 
-    <script src="/static/js/learn.js"></script>
+    <script src="./static/js/config.js"></script>
+    <script src="./static/js/learn.js"></script>
   </body>
 </html>
