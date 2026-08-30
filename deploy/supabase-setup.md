@@ -1,109 +1,141 @@
-# Supabase 持久化設定
+# Supabase 設定
 
-讓 **筆記、WebHook 訂閱、事件紀錄** 在 Render 冷啟動後仍保留。  
-向量索引（Chroma）仍在容器本機，但啟動時會 **自動從 Postgres 重建**。
-
----
+正式環境使用 Supabase Database + Supabase Edge Functions，不使用 Render。筆記、WebHook 訂閱與事件紀錄都直接保存於 Supabase；瀏覽器只呼叫 Edge Function，不接觸資料庫密碼或 service role key。
 
 ## 會持久化 vs 不會
 
-| 資料 | Supabase 接上後 |
-|------|-----------------|
+| 資料 | Supabase Edge Function 版本 |
+|------|-----------------------------|
 | 筆記 `/notes` | ✅ 保留 |
 | WebHook 訂閱 | ✅ 保留 |
 | 事件紀錄 `/events` | ✅ 保留 |
-| Chroma 向量檔 | ⚠️ 重啟後重建（從筆記同步，RAG 仍可用） |
-
----
+| RAG 索引 | ✅ 以 Supabase 筆記做輕量文字檢索 |
+| 本機 Chroma | ✅ 僅本機 FastAPI/Docker 使用 |
 
 ## Step 1 — 建立 Supabase 專案
 
 1. 登入 https://supabase.com
-2. **New project**（免費 tier 即可）
-3. 記下 **Database password**（只顯示一次）
+2. **New project**（免費 tier 可先用於教學）
+3. 記下 **Project ref**，稍後設定 GitHub Actions。
 
----
-
-## Step 2 — 執行 SQL Schema
+## Step 2 — 建立資料表與安全設定
 
 1. Supabase Dashboard → **SQL Editor**
-2. 貼上本 repo 的 `supabase/schema.sql` 全文
-3. **Run**
+2. 貼上並執行本 repo 的 `supabase/schema.sql`
+3. 若資料表原本已存在，再執行 `supabase/migrations/20260830000000_enable_rls_for_edge_api.sql`
 
----
+RLS migration 會阻止 `anon` 與 `authenticated` 直接讀寫這四張表；Edge Function 使用 server-only service role key 執行資料庫操作。
 
-## Step 3 — 取得 DATABASE_URL
+## Step 3 — 設定 Function Secrets
 
-Dashboard → **Project Settings** → **Database** → **Connection string**
+在 Supabase Dashboard → **Edge Functions → Secrets** 設定：
 
-建議選 **URI** + **Session pooler**（port **6543**，適合 Render）：
-
+```env
+SUPABASE_SERVICE_ROLE_KEY=<Project Settings → API 的 service role key>
+LLM_PROVIDER=mock
+WEBHOOK_SECRET=<一組隨機字串>
 ```
-postgresql://postgres.[project-ref]:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+
+若要使用 Groq：
+
+```env
+LLM_PROVIDER=groq
+GROQ_API_KEY=<Groq API key>
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-> 若密碼含特殊字元，需 URL encode（例如 `@` → `%40`）。
+其他可選 provider：
 
----
+```env
+# OpenAI
+OPENAI_API_KEY=<OpenAI API key>
+OPENAI_MODEL=gpt-4o-mini
 
-## Step 4 — 設定 Render 環境變數
+# Gemini
+GOOGLE_API_KEY=<Google AI API key>
+GEMINI_MODEL=<有效的 Gemini model 名稱>
 
-Render Dashboard → `ai-agent-tutorial` → **Environment**：
+# Dify
+DIFY_API_BASE=https://<dify-host>/v1
+DIFY_API_KEY=<Dify Chat App API key>
+```
 
-| Key | Value |
-|-----|--------|
-| `DATABASE_URL` | 上一步的 Supabase URI |
-| `LLM_PROVIDER` | `mock`（或 `openai`） |
-| `CHROMA_DIR` | `./data/chroma` |
+不要把任何上述 secret 寫進 `static/`、GitHub Pages 或 Git repository。
 
-儲存後會 **自動 redeploy**。
+## Step 4 — 部署 Edge Function
 
----
-
-## Step 5 — 本機開發（可選）
+安裝 Supabase CLI 後：
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase functions deploy api
+```
+
+API URL：
+
+```text
+https://<your-project-ref>.supabase.co/functions/v1/api
+```
+
+`supabase/config.toml` 已設定公開教學 API 所需的 `verify_jwt = false`。若之後加入使用者登入，請改用 JWT 驗證並在 Function 內檢查權限。
+
+## Step 5 — 設定 GitHub Pages
+
+在 GitHub repository → **Settings → Secrets and variables → Actions**：
+
+### Variables
+
+| Name | Value |
+|------|-------|
+| `SUPABASE_PROJECT_REF` | Supabase project ref |
+| `SUPABASE_FUNCTION_URL` | `https://<project-ref>.supabase.co/functions/v1/api` |
+
+### Secrets
+
+| Name | Value |
+|------|-------|
+| `SUPABASE_ACCESS_TOKEN` | Supabase Personal Access Token |
+
+再到 **Settings → Pages**，把 Source 設為 **GitHub Actions**。push 到 `main` 後：
+
+- `pages.yml` 發布前端
+- `supabase-functions.yml` 部署 Edge Function
+
+## Step 6 — 驗收
+
+```powershell
+Invoke-RestMethod https://<your-project-ref>.supabase.co/functions/v1/api/health
+Invoke-RestMethod https://<your-project-ref>.supabase.co/functions/v1/api/notes
+```
+
+預期 `/health`：
+
+```json
+{
+  "status": "ok",
+  "storage": "supabase",
+  "persistent_data": true,
+  "llm_provider": "mock"
+}
+```
+
+完成後開啟：
+
+```text
+https://<github-owner>.github.io/<repository-name>/
+```
+
+在 Step 1 建立筆記，再到 Step 2 提問，確認 `sources` 能回傳 Supabase 中的筆記。
+
+## 本機開發（可選）
+
+本機 FastAPI 仍可使用 SQLite 或 Supabase Postgres：
+
+```powershell
 copy .env.example .env
-# 編輯 .env，把 DATABASE_URL 改成 Supabase URI
 pip install -r requirements.txt
 python src\run.py
 ```
 
-開啟 http://localhost:8000/health 應看到：
-
-```json
-{
-  "storage": "postgres",
-  "persistent_data": true
-}
-```
-
----
-
-## Step 6 — 驗收
-
-1. `/learn` 頂部顯示 **資料儲存：postgres（Supabase 持久化已啟用）**
-2. 建立筆記、註冊 WebHook
-3. 等 Render 閒置 sleep 後再回來
-4. 冷啟動完成後，筆記與 WebHook **應仍在**
-5. `POST /ask` 的 `sources` 仍正常（Chroma 已自動重建）
-
----
-
-## 常見問題
-
-| 症狀 | 解法 |
-|------|------|
-| `connection refused` | 確認用 pooler URI（6543）或允許 IP |
-| `password authentication failed` | 重設 DB 密碼；檢查 URL encode |
-| `relation "notes" does not exist` | 重新執行 `supabase/schema.sql` |
-| health 仍顯示 `sqlite` | Render 的 `DATABASE_URL` 未設定或未 redeploy |
-
----
-
-## 安全提醒
-
-- **DATABASE_URL 含密碼**，只放在 Render Secrets / 本機 `.env`
-- 不要 commit 到 GitHub
-- 此教學 API 無登入，請勿公開敏感資料
+本機網址：`http://localhost:8000/learn`。本機 API 保留 Swagger：`http://localhost:8000/docs`。

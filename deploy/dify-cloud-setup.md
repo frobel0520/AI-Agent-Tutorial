@@ -1,6 +1,6 @@
-# Dify 公網上線（零預算 · Kai）
+# Dify 公網連線（Supabase Edge Function）
 
-讓 **Render** 上的 `POST /dify/ask` 與 `/learn` Step 4 能連到 Dify。  
+讓 **Supabase Edge Function** 的 `POST /dify/ask` 與 GitHub Pages Step 4 能連到 Dify。
 推薦路線：**本機既有 Dify Docker + Cloudflare Quick Tunnel**（免費、開發最快）。  
 若需 24/7 免費 VPS，見文末「進階：Oracle Cloud」。
 
@@ -10,8 +10,8 @@
 
 ```mermaid
 flowchart LR
-    User[學習台 /learn] --> Render[Render FastAPI]
-    Render -->|DIFY_API_BASE| Tunnel[Cloudflare Tunnel URL]
+    User[GitHub Pages 學習台] --> Edge[Supabase Edge Function]
+    Edge -->|DIFY_API_BASE| Tunnel[Cloudflare Tunnel URL]
     Tunnel --> Dify[本機 Dify :80]
     Dify --> Groq[Groq API 免費 LLM]
 ```
@@ -71,9 +71,9 @@ https://something-random.trycloudflare.com
 
 ---
 
-## Step 3 — Render 環境變數
+## Step 3 — Supabase Function Secrets
 
-Render Dashboard → **Environment**（與 `deploy/free-llm-cloud.md` 的 Gemini 變數一併設定）：
+Supabase Dashboard → **Edge Functions → Secrets**：
 
 | 變數 | 範例 |
 |------|------|
@@ -85,22 +85,21 @@ Render Dashboard → **Environment**（與 `deploy/free-llm-cloud.md` 的 Gemini
 - `DIFY_API_BASE` 結尾為 `/v1`，**不要**漏掉
 - 使用 `https://` 開頭的 tunnel 網址
 
-儲存 → 等待 redeploy。
+儲存後重新部署 `api` Function；若使用 GitHub Actions，push `supabase/functions/` 的變更即可觸發部署。
 
 ---
 
 ## Step 4 — 驗收
 
 ```powershell
-# 冷啟動後再試
-Invoke-RestMethod https://ai-agent-tutorial.onrender.com/health
+Invoke-RestMethod https://<project-ref>.supabase.co/functions/v1/api/health
 ```
 
 預期：`dify_configured: true`，`llm_provider: gemini`
 
 瀏覽器：
 
-1. https://ai-agent-tutorial.onrender.com/learn  
+1. GitHub Pages 學習台
 2. **Step 4** 提問「REST 的 GET 是做什麼？」  
 3. 應回傳自然語句（非 Mock），非 502
 
@@ -112,10 +111,10 @@ Swagger：`POST /dify/ask`
 
 | 症狀 | 解法 |
 |------|------|
-| `dify_configured: false` | Render 未設 `DIFY_API_KEY` 或未 redeploy |
+| `dify_configured: false` | Supabase Function Secrets 未設 `DIFY_API_KEY` 或 Function 尚未重新部署 |
 | 502 Dify request failed | Tunnel 關了、Dify 容器停了、或 `DIFY_API_BASE` 錯 |
 | 401 | API Key 錯或未 Publish |
-| Tunnel URL 變了 | 更新 Render `DIFY_API_BASE` 並 redeploy |
+| Tunnel URL 變了 | 更新 Supabase `DIFY_API_BASE` secret 並重新部署 |
 | 本機 OK、線上失敗 | 確認 tunnel 與 Dify 同時運行 |
 
 ---
@@ -136,5 +135,5 @@ Swagger：`POST /dify/ask`
 ## 相關文件
 
 - 本機 Dify：`deploy/dify-setup.md`
-- Render LLM：`deploy/free-llm-cloud.md`
+- Edge Function LLM：`deploy/free-llm-cloud.md`
 - 進度：`deploy/PROGRESS.md`

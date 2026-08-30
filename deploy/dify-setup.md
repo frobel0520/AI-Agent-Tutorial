@@ -153,7 +153,7 @@ http://localhost:8000/learn → **Step 4 · Dify 問答**
 | `502 Dify request failed` | 確認 Dify 容器正常、`DIFY_API_BASE=http://localhost/v1` |
 | `401 Unauthorized` | API Key 錯誤，或 app 未發布 |
 | `model 'Ollama' not found`（404） | **Model Name** 填成 provider 名稱了；應填 `llama3.2` 等已 pull 的模型名 |
-| Render 雲端 `/dify/ask` 失敗 | 雲端無法連你電腦的 `localhost`；需另架可公網存取的 Dify |
+| Edge Function `/dify/ask` 失敗 | Supabase 無法連你電腦的 `localhost`；需另架可公網存取的 Dify，並把 URL 放進 Function Secrets |
 | 與 Ollama 衝突？ | 不衝突；Ollama 用 11434，Dify 用 80/443（nginx） |
 
 ---
