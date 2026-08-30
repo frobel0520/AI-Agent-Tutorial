@@ -36,6 +36,7 @@ jobs:
         run: |
           mkdir -p _site/static/css _site/static/js
           cp static/learn.html _site/index.html
+          cp static/favicon.svg _site/favicon.svg
           cp static/css/learn.css _site/static/css/learn.css
           cp static/js/learn.js _site/static/js/learn.js
           if [ -n "$SUPABASE_FUNCTION_URL" ]; then
