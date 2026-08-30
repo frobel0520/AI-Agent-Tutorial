@@ -1,0 +1,55 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "static/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Prepare static site
+        env:
+          SUPABASE_FUNCTION_URL: ${{ vars.SUPABASE_FUNCTION_URL }}
+        run: |
+          mkdir -p _site/static/css _site/static/js
+          cp static/learn.html _site/index.html
+          cp static/css/learn.css _site/static/css/learn.css
+          cp static/js/learn.js _site/static/js/learn.js
+          if [ -n "$SUPABASE_FUNCTION_URL" ]; then
+            printf '%s\n' "window.APP_CONFIG = Object.freeze({ apiBaseUrl: \"$SUPABASE_FUNCTION_URL\" });" > _site/static/js/config.js
+          else
+            cp static/js/config.js _site/static/js/config.js
+          fi
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
