@@ -1,4 +1,8 @@
-const API_BASE = window.location.origin;
+const configuredApiBase = String(window.APP_CONFIG?.apiBaseUrl || "").trim();
+const isLocalDevelopment = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const API_BASE = (configuredApiBase || (isLocalDevelopment ? window.location.origin : ""))
+  .replace(/\/$/, "");
+const API_DOCS_URL = "https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/docs";
 
 const statusBanner = document.getElementById("statusBanner");
 const providerCallout = document.getElementById("providerCallout");
@@ -13,6 +17,10 @@ function showBanner(message, isError = false) {
 }
 
 async function api(path, options = {}) {
+  if (!API_BASE || API_BASE === "null") {
+    throw new Error("尚未設定 Supabase Edge Function URL。請檢查 static/js/config.js 或 GitHub Pages repository variable。");
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
@@ -87,15 +95,27 @@ function prettyJson(value) {
   return JSON.stringify(value, null, 2);
 }
 
+function absoluteUrl(value, fallback) {
+  try {
+    return new URL(value || fallback, API_BASE).href;
+  } catch {
+    return fallback;
+  }
+}
+
 async function loadHealth() {
   try {
     const health = await api("/health");
+    const docsUrl = absoluteUrl(health.docs_url, API_DOCS_URL);
+    const storageMessage = health.persistent_data
+      ? "（Supabase 持久化已啟用）"
+      : "（目前使用本機儲存）";
     providerCallout.innerHTML = `
       <strong>連線 OK</strong> · 服務：<code>${escapeHtml(health.app_name)}</code>
       · LLM 模式：<code>${escapeHtml(health.llm_provider)}</code>
       · 資料儲存：<code>${escapeHtml(health.storage)}</code>
-      ${health.persistent_data ? "（Supabase 持久化已啟用）" : "（本機 SQLite，Render 重啟後資料可能消失）"}
-      · 進階 API 文件：<a href="${health.docs_url}" target="_blank" rel="noreferrer">${health.docs_url}</a>
+      ${storageMessage}
+      · API 文件：<a href="${escapeHtml(docsUrl)}" target="_blank" rel="noreferrer">開啟教學文件</a>
     `;
     mockExplain.innerHTML = `
       目前 LLM 模式：<strong>${escapeHtml(health.llm_provider)}</strong>。
@@ -109,25 +129,25 @@ async function loadHealth() {
             : health.llm_provider === "gemini"
               ? health.llm_ready
                 ? "Gemini 雲端 LLM 已就緒。回答應為自然語句（實境教學），且仍有 <code>sources</code>。"
-                : "Gemini 尚未設定。Render 請設 <code>GOOGLE_API_KEY</code>，見 deploy/free-llm-cloud.md"
+                : "Gemini 尚未設定。請在 Supabase Edge Function Secrets 設定 <code>GOOGLE_API_KEY</code> 與 <code>GEMINI_MODEL</code>。"
               : health.llm_provider === "groq"
                 ? health.llm_ready
                   ? "Groq 雲端 LLM 已就緒。回答應為自然語句（實境教學），且仍有 <code>sources</code>（本模式的檢索用簡易向量，非語意搜尋）。"
-                  : "Groq 尚未設定。Render 請設 <code>GROQ_API_KEY</code>，見 deploy/free-llm-cloud.md"
+                  : "Groq 尚未設定。請在 Supabase Edge Function Secrets 設定 <code>GROQ_API_KEY</code>。"
                 : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
       }
     `;
     if (difyExplain) {
       difyExplain.innerHTML = health.dify_configured
-        ? "<strong>Dify 已設定</strong>。可直接提問；若 502 請確認公網 Dify 可連（本機 Docker + Cloudflare Tunnel，或見 deploy/dify-cloud-setup.md）。"
-        : "<strong>Step 4 為本機示範功能</strong>，需自行跑 <code>.\\scripts\\setup-dify.ps1</code> 並設 <code>DIFY_API_KEY</code> 才能提問；線上 Render 版本預設不開放此步驟（見 docs/04-dify.md）。";
+        ? "<strong>Dify 已設定</strong>。可直接提問；若 502 請確認 Supabase Edge Function 能連到 Dify。"
+        : "<strong>Step 4 尚未設定</strong>，請在 Supabase Edge Function Secrets 設定 <code>DIFY_API_BASE</code> 與 <code>DIFY_API_KEY</code>；本機示範則可使用 <code>.env</code>。";
     }
     if (difySubmitBtn) {
       difySubmitBtn.disabled = !health.dify_configured;
     }
     showBanner("已連線到後端 API，可以開始 Step 1。");
   } catch (error) {
-    providerCallout.innerHTML = `<strong>連線失敗</strong>：${escapeHtml(error.message)}。Render 冷啟動請等 30～60 秒後再按「重新檢查連線」。`;
+    providerCallout.innerHTML = `<strong>連線失敗</strong>：${escapeHtml(error.message)}。請確認 Supabase Edge Function 已部署，且 Pages 的 <code>SUPABASE_FUNCTION_URL</code> 已設定。`;
     showBanner(`無法連線：${error.message}`, true);
   }
 }
