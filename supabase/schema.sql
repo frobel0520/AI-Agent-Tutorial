@@ -37,5 +37,11 @@ create table if not exists webhook_deliveries (
 create index if not exists idx_event_logs_created_at on event_logs (created_at desc);
 create index if not exists idx_notes_updated_at on notes (updated_at desc);
 
--- Backend-only access: FastAPI connects with DATABASE_URL (postgres role).
--- No RLS required for this tutorial API; do not expose DATABASE_URL to browsers.
+-- Production access: the Supabase Edge Function uses a server-only service
+-- role key. Browsers call the function and never receive DATABASE_URL or the
+-- service role key. The migration in supabase/migrations also applies these
+-- protections to an existing project.
+alter table if exists public.notes enable row level security;
+alter table if exists public.webhook_subscriptions enable row level security;
+alter table if exists public.event_logs enable row level security;
+alter table if exists public.webhook_deliveries enable row level security;
