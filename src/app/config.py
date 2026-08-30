@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     llm_provider: str = "mock"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
-    # Free cloud tier for Render (https://aistudio.google.com/apikey)
+    # Free cloud tier for local or Supabase Edge Function deployments.
     google_api_key: str = ""
     gemini_model: str = "gemini-3.5-flash"
     # Free, stable OpenAI-compatible cloud tier (https://console.groq.com/keys)
