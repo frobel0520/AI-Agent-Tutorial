@@ -1,0 +1,6 @@
+# Supabase CLI configuration for the production API function.
+# Link this checkout to your project with:
+#   supabase link --project-ref <your-project-ref>
+
+[functions.api]
+verify_jwt = false
