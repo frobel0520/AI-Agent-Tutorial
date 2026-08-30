@@ -6,6 +6,8 @@ __pycache__/
 *.sqlite3
 data/
 .chroma/
+supabase/.temp/
+supabase/functions/.env
 *.egg-info/
 dist/
 build/

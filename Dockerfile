@@ -17,5 +17,5 @@ RUN mkdir -p /app/data /app/data/chroma
 
 EXPOSE 8000
 
-# Render sets PORT at runtime; default 8000 for local Docker.
+# Local Docker uses PORT when provided; default to 8000.
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
