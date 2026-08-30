@@ -104,8 +104,10 @@ git push -u origin main
 
 ---
 
-## Push 成功後 → Render 上線
+## Push 成功後 → GitHub Pages + Supabase 上線
 
-見 [render-deploy.md](./render-deploy.md) Step 2。
-
-完成 push 後回覆 **「已 push」**，River 可協助 Render 驗收 checklist。
+1. 依 [github-supabase-deploy.md](./github-supabase-deploy.md) 設定 Supabase schema、Function Secrets 與 Edge Function。
+2. 設定 GitHub Actions 的 `SUPABASE_PROJECT_REF`、`SUPABASE_FUNCTION_URL` variable。
+3. 設定 `SUPABASE_ACCESS_TOKEN` secret。
+4. 到 GitHub repository 的 **Settings → Pages**，將 Source 設為 **GitHub Actions**。
+5. push 到 `main`，確認 `Deploy GitHub Pages` 與 `Deploy Supabase Edge Function` workflow 成功。

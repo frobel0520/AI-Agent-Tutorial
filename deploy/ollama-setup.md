@@ -1,7 +1,7 @@
 # Ollama 本機真實 LLM 設定
 
 Ollama 在**你的電腦**跑免費開源模型，**不用 API Key**。  
-Render 雲端版無法連到你電腦的 Ollama；雲端請維持 `mock` 或改用 `openai`。
+Supabase Edge Function 無法連到你電腦的 Ollama；正式環境請使用 `mock`、`groq`、`gemini` 或 `openai`。
 
 ---
 
@@ -81,7 +81,7 @@ API：`http://localhost:8000/learn`
 | `llm_ready: false` | 確認 `docker compose ps` 中 ollama 在跑；執行 `ollama pull` |
 | Docker 連線失敗 | 開啟 Docker Desktop |
 | 第一次 `/ask` 很慢 | 模型載入中，等 30～60 秒再試 |
-| Render 想用 Ollama | 不行連本機；請用 OpenAI 或另架 Ollama 伺服器 |
+| Edge Function 想用 Ollama | 不行連本機；請用 Groq、Gemini、OpenAI 或另架公開 Ollama 伺服器 |
 | 記憶體不足 | 改用小模型 `llama3.2:1b` |
 | `embedding ... dimension of 384, got 3072` | 從 mock 切到 ollama 的向量維度不同；重啟 API 即可（已自動分 collection）。仍失敗時刪除 `data\chroma` 資料夾後重跑 |
 
