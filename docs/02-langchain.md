@@ -20,7 +20,7 @@
 |--------------|-------------|------|
 | `mock` | 否 | 先學 REST + RAG 流程 |
 | `ollama` | 否（本機 Docker） | 真實模型、無雲端費用 |
-| `groq` | 是（[免費](https://console.groq.com/keys)） | Render 零預算真實 LLM（推薦，額度穩定） |
+| `groq` | 是（[免費](https://console.groq.com/keys)） | Supabase Edge Function 的雲端真實 LLM（推薦） |
 | `gemini` | 是（[AI Studio 免費](https://aistudio.google.com/apikey)） | 備用；Google 常異動免費 model／額度 |
 | `openai` | 是（付費） | 正式商用 |
 
@@ -39,7 +39,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2
 ```
 
-### 切到 Groq（Render 推薦）
+### 切到 Groq（Edge Function 推薦）
 
 ```env
 LLM_PROVIDER=groq
