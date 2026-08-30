@@ -1,8 +1,8 @@
 # AI-Agent-Tutorial
 
-Hands-on tutorial backend for learning **LangChain**, **RESTful API**, **Dify**, and **WebHooks**.
+Hands-on tutorial project for learning **LangChain**, **RESTful API**, **Dify**, and **WebHooks**.
 
-方案 A（後端優先）：FastAPI + LangChain RAG + SQLite + Swagger UI。預設 `LLM_PROVIDER=mock`，**不需要 API Key** 就能開始練 REST 與 RAG 流程。
+本機使用 FastAPI + LangChain + SQLite；正式網站使用 GitHub Pages + Supabase Edge Functions + Supabase Database。預設 `LLM_PROVIDER=mock`，**不需要 API Key** 就能開始練 REST 與 RAG 流程。
 
 ## 學習路徑
 
@@ -60,7 +60,9 @@ python src\run.py
 |----------------|------|
 | `mock` | 預設；免 API Key，適合先學流程 |
 | `ollama` | 本機 Docker 真實模型 |
-| `openai` | 上線建議；需 `OPENAI_API_KEY` |
+| `groq` | Supabase Edge Function 可用的 OpenAI-compatible 雲端模型 |
+| `gemini` | Supabase Edge Function 可用的 Google 雲端模型 |
+| `openai` | Supabase Edge Function 可用；需 `OPENAI_API_KEY` |
 
 ### Docker（API + Ollama）
 
@@ -80,28 +82,23 @@ pip install -r requirements.txt
 pytest -q
 ```
 
-## 上線部署（Render）
+## 上線部署（GitHub Pages + Supabase）
 
-本 repo 含 `render.yaml`，可用 [Render](https://render.com) 一鍵部署 Docker 服務。
+正式環境不使用 Render。架構如下：
 
-1. 把 repo push 到 GitHub
-2. Render → **New Blueprint** → 選此 repo
-3. 環境變數建議：
-   - 先上線 demo：`LLM_PROVIDER=mock`
-   - **持久化（推薦）**：`DATABASE_URL` = Supabase Postgres URI（見 `deploy/supabase-setup.md`）
-   - 正式問答：`LLM_PROVIDER=openai` + `OPENAI_API_KEY`
-4. 部署完成後開 `https://<your-service>.onrender.com/docs`
+- GitHub Pages：發布 `static/` 學習台
+- Supabase Edge Function：提供 `/health`、`/notes`、`/ask`、`/webhooks`、`/events`、`/dify/ask`
+- Supabase Database：保存筆記、WebHook 訂閱、事件紀錄
 
-### Render 免費 tier 與 Supabase
+完整步驟見 [deploy/github-supabase-deploy.md](deploy/github-supabase-deploy.md)。簡要流程：
 
-- Render 本機磁碟為 **ephemeral**；請接 **Supabase Postgres** 持久化筆記與 WebHook
-- 設定步驟見 [deploy/supabase-setup.md](deploy/supabase-setup.md)
-- 未接 Supabase 時，`/health` 會顯示 `storage: sqlite`、`persistent_data: false`
+1. 在 Supabase SQL Editor 執行 `supabase/schema.sql`，再執行 RLS migration。
+2. 設定 Supabase Function Secrets：`SUPABASE_SERVICE_ROLE_KEY`、`LLM_PROVIDER` 與對應的 LLM key。
+3. 部署 `supabase/functions/api` Edge Function。
+4. 在 GitHub repository variables 設定 `SUPABASE_PROJECT_REF` 與 `SUPABASE_FUNCTION_URL`。
+5. 將 GitHub Pages 的 source 設為 **GitHub Actions**；push 到 `main` 後會自動發布前端與 Edge Function。
 
-### 其他平台
-
-- **Railway / Fly.io**：使用根目錄 `Dockerfile`
-- **Health check path**：`/health`
+GitHub Pages 網站本身不存放任何 Supabase、LLM 或 Dify secret；前端只保存公開的 Function URL。
 
 ## Dify（Phase 3）
 
@@ -111,23 +108,26 @@ pytest -q
 
 ```
 src/app/
-  main.py              # FastAPI app
+  main.py              # 本機 FastAPI app
   routers/             # REST endpoints
   services/            # LangChain, WebHook, Dify
+supabase/functions/api/
+  index.ts              # 正式環境 Edge Function API
+supabase/migrations/    # Supabase 安全設定
+static/                 # GitHub Pages 前端
 docs/                  # 分章教學
 tests/                 # pytest
-Dockerfile
+Dockerfile              # 本機 Docker API
 docker-compose.yml
-render.yaml
 ```
 
 ## 下一步
 
-1. 完成 Phase 1 的 Swagger 練習
+1. 完成 Phase 1 的本機 Swagger 練習
 2. 用 webhook.site 完成 Phase 2
 3. **本機 Ollama 真實 LLM**：見 [deploy/ollama-setup.md](deploy/ollama-setup.md)
 4. Docker 跑 Dify，打通 `/dify/ask`
-5. 雲端取得 OpenAI key 後切 `LLM_PROVIDER=openai` 並 redeploy
+5. Supabase Edge Function 設定 Groq/OpenAI/Gemini 後切換 `LLM_PROVIDER`
 
 ## License
 
