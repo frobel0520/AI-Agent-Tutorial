@@ -102,7 +102,7 @@ class RagService:
         )
 
     def rebuild_from_notes(self, notes: list[Note]) -> int:
-        """Rebuild local Chroma index from persisted notes (needed after Render cold start)."""
+        """Rebuild the local Chroma index from persisted notes."""
         for note in notes:
             self.sync_note(note)
         return len(notes)
