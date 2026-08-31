@@ -3,4 +3,6 @@
 // Leave it empty for local FastAPI development so same-origin API calls work.
 window.APP_CONFIG = Object.freeze({
   apiBaseUrl: "",
+  supabaseUrl: "",
+  supabasePublishableKey: "",
 });
