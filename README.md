@@ -93,10 +93,10 @@ pytest -q
 
 完整步驟見 [deploy/github-supabase-deploy.md](deploy/github-supabase-deploy.md)。簡要流程：
 
-1. 在 Supabase SQL Editor 執行 `supabase/schema.sql`，再執行 RLS migration。
+1. 在 Supabase SQL Editor 執行 `supabase/schema.sql`，再執行 RLS 與 `dify_access` migration。
 2. 設定 Supabase Function Secrets：`SUPABASE_SERVICE_ROLE_KEY`、`LLM_PROVIDER` 與對應的 LLM key。
 3. 部署 `supabase/functions/api` Edge Function。
-4. 在 GitHub repository variables 設定 `SUPABASE_PROJECT_REF` 與 `SUPABASE_FUNCTION_URL`。
+4. 在 GitHub repository variables 設定 `SUPABASE_PROJECT_REF`、`SUPABASE_FUNCTION_URL`、`SUPABASE_PROJECT_URL` 與 `SUPABASE_PUBLISHABLE_KEY`。
 5. 將 GitHub Pages 的 source 設為 **GitHub Actions**；push 到 `main` 後會自動發布前端與 Edge Function。
 
 GitHub Pages 網站本身不存放任何 Supabase、LLM 或 Dify secret；前端只保存公開的 Function URL。
@@ -104,6 +104,8 @@ GitHub Pages 網站本身不存放任何 Supabase、LLM 或 Dify secret；前端
 ## Dify（Phase 3）
 
 見 [docs/04-dify.md](docs/04-dify.md) 與 [deploy/dify-compose.note.md](deploy/dify-compose.note.md)。
+
+正式 Dify 呼叫需先使用 Google 登入，且帳號必須在 Supabase `dify_access` 授權表中。
 
 ## 專案結構
 
