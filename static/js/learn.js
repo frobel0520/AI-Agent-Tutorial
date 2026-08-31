@@ -3,12 +3,15 @@ const isLocalDevelopment = ["localhost", "127.0.0.1"].includes(window.location.h
 const API_BASE = (configuredApiBase || (isLocalDevelopment ? window.location.origin : ""))
   .replace(/\/$/, "");
 const API_DOCS_URL = "https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/docs";
+const OWN_WEBHOOK_PATH = "/hooks/incoming";
 
 const statusBanner = document.getElementById("statusBanner");
 const providerCallout = document.getElementById("providerCallout");
 const mockExplain = document.getElementById("mockExplain");
 const difyExplain = document.getElementById("difyExplain");
 const difySubmitBtn = document.getElementById("difySubmitBtn");
+const ownWebhookEndpoint = document.getElementById("ownWebhookEndpoint");
+const useOwnWebhookBtn = document.getElementById("useOwnWebhookBtn");
 
 function showBanner(message, isError = false) {
   statusBanner.textContent = message;
@@ -226,11 +229,18 @@ document.getElementById("webhookForm").addEventListener("submit", async (event) 
       body: JSON.stringify({ url, event_types }),
     });
     webhookResult.textContent = prettyJson(created);
-    showBanner("WebHook 註冊成功。請到 webhook.site 查看事件。");
+    showBanner("WebHook 註冊成功。建立筆記後即可測試事件接收。");
   } catch (error) {
     webhookResult.textContent = error.message;
     showBanner(error.message, true);
   }
+});
+
+useOwnWebhookBtn?.addEventListener("click", () => {
+  const endpoint = `${API_BASE}${OWN_WEBHOOK_PATH}`;
+  document.getElementById("webhookUrl").value = endpoint;
+  document.getElementById("eventTypes").value = "note.created,ask.completed";
+  showBanner("已填入本專案的 WebHook endpoint，請按註冊完成設定。");
 });
 
 document.getElementById("loadEventsBtn").addEventListener("click", async () => {
@@ -277,3 +287,9 @@ loadHealth()
   .catch(() => {
     /* handled in loadHealth */
   });
+
+if (ownWebhookEndpoint) {
+  ownWebhookEndpoint.textContent = API_BASE
+    ? `${API_BASE}${OWN_WEBHOOK_PATH}`
+    : "尚未設定 Supabase Edge Function URL";
+}
