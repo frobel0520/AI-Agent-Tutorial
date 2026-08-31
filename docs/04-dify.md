@@ -1,6 +1,28 @@
 # Dify 教學（Phase 3）
 
-## 前置：用 Docker 跑 Dify
+## 零元線上方案：Dify Cloud Sandbox
+
+本專案正式環境建議使用 Dify Cloud 的 Sandbox 免費方案，不需要 Render 或自行維護 Dify 主機。Dify Cloud API Base URL 固定為：
+
+```text
+https://api.dify.ai/v1
+```
+
+官方目前列出的 Sandbox 限額包含 5 個 App、50 份知識文件、50MB 知識庫、200 message credits，以及每月 5,000 次 API 限額。額度適合教學與低流量示範；不是無限量或大量公開服務。
+
+1. 到 <https://cloud.dify.ai> 登入。
+2. 建立一個 Chat App，設定 system prompt。
+3. Publish 後進入 API Access，建立 App API Key。
+4. Supabase Edge Function Secrets 設定：
+
+```env
+DIFY_API_BASE=https://api.dify.ai/v1
+DIFY_API_KEY=app-xxxxxxxx
+```
+
+本專案的 Step 4 會先要求 Google 登入；只有被加入 `public.dify_access` 的帳號可以呼叫 Dify。
+
+## 選用：本機用 Docker 跑 Dify
 
 你已具備 Docker Desktop，建議用官方 docker 目錄：
 
