@@ -24,6 +24,11 @@
           </a>
           <button id="refreshHealthBtn" class="button secondary" type="button">重新檢查連線</button>
         </div>
+        <div class="auth-panel" id="authPanel">
+          <span class="auth-status" id="authStatus">登入設定載入中…</span>
+          <button class="secondary" id="googleSignInBtn" type="button">使用 Google 登入</button>
+          <button class="secondary" id="signOutBtn" type="button" hidden>登出</button>
+        </div>
       </header>
 
       <section class="hero">
@@ -207,6 +212,9 @@
         <div class="callout warn" id="difyExplain">
           正在檢查 Dify 設定…
         </div>
+        <div class="callout info" id="difyAuthExplain">
+          Dify 只開放給已登入且被授權的 Google 帳號；訪客不能呼叫。
+        </div>
 
         <div class="grid-2">
           <dl class="glossary">
@@ -215,12 +223,11 @@
             <dt>Dify /dify/ask</dt>
             <dd>轉發到 Dify Chat App，回傳 <code>answer</code> 與 <code>raw</code>（Dify 原始 JSON）。</dd>
             <dt>前置</dt>
-            <dd>需在 Supabase Edge Function Secrets 設定 <code>DIFY_API_BASE</code> 與 <code>DIFY_API_KEY</code>。本機示範仍可使用 <code>.env</code>。</dd>
+            <dd>免費 Dify Cloud 使用 <code>https://api.dify.ai/v1</code>；API Key 放在 Supabase Secrets。另需使用 Google 登入並取得 Dify 授權。</dd>
           </dl>
           <div class="callout info">
-            <strong>安裝 Dify（首次）</strong><br />
-            <code>.\scripts\setup-dify.ps1</code><br />
-            瀏覽器 http://localhost/install → 建 Chat App → 複製 API Key
+            <strong>免費 Dify Cloud（首次）</strong><br />
+            建立 Chat App → Publish → API Access → 複製 App API Key
           </div>
         </div>
 
@@ -230,7 +237,7 @@
             <input id="difyQuestionInput" name="question" placeholder="例如：REST 的 GET 是做什麼？" required />
           </div>
           <div class="actions">
-            <button class="primary" type="submit" id="difySubmitBtn">送到 Dify</button>
+            <button class="primary" type="submit" id="difySubmitBtn" disabled>送到 Dify</button>
             <button class="secondary" id="sampleDifyBtn" type="button">使用範例問題</button>
           </div>
         </form>
@@ -241,6 +248,7 @@
     </div>
 
     <script src="./static/js/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./static/js/learn.js"></script>
   </body>
 </html>
