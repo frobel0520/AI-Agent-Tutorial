@@ -26,8 +26,85 @@ const difySubmitBtn = document.getElementById("difySubmitBtn");
 const ownWebhookEndpoint = document.getElementById("ownWebhookEndpoint");
 const useOwnWebhookBtn = document.getElementById("useOwnWebhookBtn");
 const authStatus = document.getElementById("authStatus");
+const authAvatar = document.getElementById("authAvatar");
 const googleSignInBtn = document.getElementById("googleSignInBtn");
 const signOutBtn = document.getElementById("signOutBtn");
+const connectionPill = document.getElementById("connectionPill");
+const connectionStatus = document.getElementById("connectionStatus");
+const sidebarHealth = document.getElementById("sidebarHealth");
+const activeSectionLabel = document.getElementById("activeSectionLabel");
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+const stepLinks = Array.from(document.querySelectorAll(".step-link"));
+const stepSections = stepLinks
+  .map((link) => ({ link, section: document.querySelector(link.getAttribute("href")) }))
+  .filter(({ section }) => section);
+
+function setConnectionState(state, label) {
+  if (connectionPill) {
+    connectionPill.classList.toggle("is-loading", state === "loading");
+    connectionPill.classList.toggle("is-error", state === "error");
+  }
+  if (connectionStatus) {
+    connectionStatus.textContent = label;
+  }
+}
+
+function setSidebarHealth(state, label) {
+  if (!sidebarHealth) {
+    return;
+  }
+  sidebarHealth.classList.toggle("is-error", state === "error");
+  const detail = sidebarHealth.querySelector("small");
+  if (detail) {
+    detail.textContent = label;
+  }
+}
+
+function setActiveStep(link) {
+  if (!link) {
+    return;
+  }
+  stepLinks.forEach((item) => {
+    const isActive = item === link;
+    item.classList.toggle("active", isActive);
+    if (isActive) {
+      item.setAttribute("aria-current", "step");
+    } else {
+      item.removeAttribute("aria-current");
+    }
+  });
+  if (activeSectionLabel) {
+    activeSectionLabel.textContent = link.querySelector(".step-title")?.textContent || link.textContent.trim();
+  }
+}
+
+function syncActiveStepToViewport() {
+  if (!stepSections.length) {
+    return;
+  }
+  const readingAnchor = Math.min(280, Math.max(120, window.innerHeight * 0.28));
+  let current = stepSections[0];
+  stepSections.forEach((item) => {
+    if (item.section.getBoundingClientRect().top <= readingAnchor) {
+      current = item;
+    }
+  });
+  setActiveStep(current.link);
+}
+
+function closeSidebar() {
+  document.body.classList.remove("sidebar-open");
+  mobileMenuBtn?.setAttribute("aria-expanded", "false");
+  sidebarBackdrop?.classList.add("hidden");
+}
+
+function toggleSidebar() {
+  const willOpen = !document.body.classList.contains("sidebar-open");
+  document.body.classList.toggle("sidebar-open", willOpen);
+  mobileMenuBtn?.setAttribute("aria-expanded", String(willOpen));
+  sidebarBackdrop?.classList.toggle("hidden", !willOpen);
+}
 
 function showBanner(message, isError = false) {
   statusBanner.textContent = message;
@@ -169,6 +246,7 @@ function renderAuthState(session) {
   currentSession = session;
   if (!authClient) {
     if (authStatus) authStatus.textContent = "Google 登入尚未設定";
+    if (authAvatar) authAvatar.textContent = "?";
     if (googleSignInBtn) googleSignInBtn.disabled = true;
     if (signOutBtn) signOutBtn.hidden = true;
     updateDifyUi();
@@ -176,10 +254,12 @@ function renderAuthState(session) {
   }
   const user = session?.user;
   if (user) {
+    if (authAvatar) authAvatar.textContent = (user.email || "G").trim().charAt(0).toUpperCase() || "G";
     if (authStatus) authStatus.textContent = `已登入：${user.email || "Google 帳號"}`;
     if (googleSignInBtn) googleSignInBtn.hidden = true;
     if (signOutBtn) signOutBtn.hidden = false;
   } else {
+    if (authAvatar) authAvatar.textContent = "?";
     if (authStatus) authStatus.textContent = "尚未登入";
     if (googleSignInBtn) {
       googleSignInBtn.hidden = false;
@@ -232,6 +312,8 @@ async function initAuth() {
 }
 
 async function loadHealth() {
+  setConnectionState("loading", "檢查中…");
+  setSidebarHealth("loading", "正在檢查 API…");
   try {
     const health = await api("/health");
     const docsUrl = absoluteUrl(health.docs_url, API_DOCS_URL);
@@ -266,6 +348,8 @@ async function loadHealth() {
       }
     `;
     latestHealth = health;
+    setConnectionState("online", "連線 OK");
+    setSidebarHealth("online", `${health.llm_provider || "API"} · ${health.storage || "服務正常"}`);
     if (difyExplain) {
       difyExplain.innerHTML = health.dify_configured
         ? "<strong>Dify API 已設定</strong>。仍需 Google 登入並取得授權才能呼叫。"
@@ -275,6 +359,8 @@ async function loadHealth() {
     showBanner("已連線到後端 API，可以開始 Step 1。");
   } catch (error) {
     latestHealth = null;
+    setConnectionState("error", "連線失敗");
+    setSidebarHealth("error", "請檢查部署設定");
     updateDifyUi();
     providerCallout.innerHTML = `<strong>連線失敗</strong>：${escapeHtml(error.message)}。請確認 Supabase Edge Function 已部署，且 Pages 的 <code>SUPABASE_FUNCTION_URL</code> 已設定。`;
     showBanner(`無法連線：${error.message}`, true);
@@ -429,12 +515,46 @@ document.getElementById("sampleDifyBtn")?.addEventListener("click", () => {
   document.getElementById("difyQuestionInput").value = "REST 的 GET 是做什麼？";
 });
 
-document.querySelectorAll(".step-link").forEach((link) => {
+stepLinks.forEach((link) => {
   link.addEventListener("click", () => {
-    document.querySelectorAll(".step-link").forEach((item) => item.classList.remove("active"));
-    link.classList.add("active");
+    setActiveStep(link);
+    closeSidebar();
+    window.setTimeout(syncActiveStepToViewport, 350);
   });
 });
+
+mobileMenuBtn?.addEventListener("click", toggleSidebar);
+sidebarBackdrop?.addEventListener("click", closeSidebar);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeSidebar();
+  }
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 860) {
+    closeSidebar();
+  }
+});
+
+let scrollFrameId = 0;
+window.addEventListener(
+  "scroll",
+  () => {
+    if (scrollFrameId) {
+      return;
+    }
+    scrollFrameId = window.requestAnimationFrame(() => {
+      scrollFrameId = 0;
+      syncActiveStepToViewport();
+    });
+  },
+  { passive: true },
+);
+
+window.addEventListener("resize", syncActiveStepToViewport);
+setActiveStep(stepLinks[0]);
 
 loadHealth()
   .then(loadNotes)

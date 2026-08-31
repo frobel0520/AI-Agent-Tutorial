@@ -12,42 +12,114 @@
 
     <div class="layout">
       <header class="topbar">
-        <div class="badge">🎓 新手學習台 · RAG / REST / WebHook / Dify</div>
-        <div class="actions">
-          <a
-            class="button secondary"
-            href="https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/docs"
-            target="_blank"
-            rel="noreferrer"
-          >
-            進階：API 教學文件
+        <div class="topbar-inner">
+          <a class="brand" href="#step-start" aria-label="回到新手學習台開始">
+            <span class="brand-mark" aria-hidden="true">
+              <img src="./favicon.svg" alt="" width="32" height="32" />
+            </span>
+            <span class="brand-copy">
+              <span class="brand-eyebrow">AI AGENT TUTORIAL</span>
+              <span class="brand-name">新手學習台</span>
+            </span>
           </a>
-          <button id="refreshHealthBtn" class="button secondary" type="button">重新檢查連線</button>
-        </div>
-        <div class="auth-panel" id="authPanel">
-          <span class="auth-status" id="authStatus">登入設定載入中…</span>
-          <button class="secondary" id="googleSignInBtn" type="button">使用 Google 登入</button>
-          <button class="secondary" id="signOutBtn" type="button" hidden>登出</button>
+
+          <div class="topbar-context" aria-live="polite">
+            <span class="topbar-context-label">目前位置</span>
+            <span class="topbar-context-title" id="activeSectionLabel">開始</span>
+          </div>
+
+          <div class="topbar-actions">
+            <div class="connection-pill is-loading" id="connectionPill" aria-live="polite">
+              <span class="connection-dot" aria-hidden="true"></span>
+              <span id="connectionStatus">檢查連線中…</span>
+            </div>
+            <a
+              class="topbar-link"
+              href="https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/docs"
+              target="_blank"
+              rel="noreferrer"
+            >
+              API 文件
+            </a>
+            <button class="mobile-menu-toggle" id="mobileMenuBtn" type="button" aria-expanded="false" aria-controls="sidebar">
+              <span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span>選單</span>
+            </button>
+            <button id="refreshHealthBtn" class="button secondary topbar-refresh" type="button">重新檢查</button>
+            <div class="auth-panel" id="authPanel">
+              <span class="auth-avatar" id="authAvatar" aria-hidden="true">?</span>
+              <span class="auth-status" id="authStatus">登入設定載入中…</span>
+              <button class="secondary" id="googleSignInBtn" type="button" aria-label="使用 Google 登入" title="使用 Google 登入">使用 Google 登入</button>
+              <button class="secondary" id="signOutBtn" type="button" aria-label="登出" title="登出" hidden>登出</button>
+            </div>
+          </div>
         </div>
       </header>
 
-      <section class="hero">
-        <h1>從這裡開始學 RAG</h1>
-        <p>
-          你<strong>不需要先會寫程式</strong>。這個頁面會帶你一步一步操作：先建立筆記，再問問題，最後看 LLM
-          如何根據筆記回答。右側會告訴你「按了之後會發生什麼」。
-        </p>
-        <div class="callout info" id="providerCallout">
-          正在連線到後端 API…
-        </div>
-        <nav class="steps-nav">
-          <a class="step-link active" href="#step-start" data-step="start"><span class="num">0</span><div>開始</div></a>
-          <a class="step-link" href="#step-notes" data-step="notes"><span class="num">1</span><div>建立筆記 (REST)</div></a>
-          <a class="step-link" href="#step-rag" data-step="rag"><span class="num">2</span><div>RAG 問答 (LangChain)</div></a>
-          <a class="step-link" href="#step-webhook" data-step="webhook"><span class="num">3</span><div>WebHook 事件</div></a>
-          <a class="step-link" href="#step-dify" data-step="dify"><span class="num">4</span><div>Dify 問答</div></a>
-        </nav>
-      </section>
+      <div class="app-frame">
+        <aside class="sidebar" id="sidebar" aria-label="學習路徑">
+          <div class="sidebar-heading">
+            <div>
+              <span class="sidebar-eyebrow">COURSE MAP</span>
+              <h2>學習路徑</h2>
+            </div>
+            <span class="sidebar-count">05 STEPS</span>
+          </div>
+
+          <nav class="steps-nav" aria-label="教學步驟">
+            <a class="step-link active" href="#step-start" data-step="start" aria-current="step">
+              <span class="step-marker"><span class="num">0</span></span>
+              <span class="step-copy"><span class="step-title">開始</span><span class="step-meta">先認識操作介面</span></span>
+            </a>
+            <a class="step-link" href="#step-notes" data-step="notes">
+              <span class="step-marker"><span class="num">1</span></span>
+              <span class="step-copy"><span class="step-title">建立筆記</span><span class="step-meta">REST · POST /notes</span></span>
+            </a>
+            <a class="step-link" href="#step-rag" data-step="rag">
+              <span class="step-marker"><span class="num">2</span></span>
+              <span class="step-copy"><span class="step-title">RAG 問答</span><span class="step-meta">LangChain · POST /ask</span></span>
+            </a>
+            <a class="step-link" href="#step-webhook" data-step="webhook">
+              <span class="step-marker"><span class="num">3</span></span>
+              <span class="step-copy"><span class="step-title">WebHook 事件</span><span class="step-meta">事件註冊與紀錄</span></span>
+            </a>
+            <a class="step-link" href="#step-dify" data-step="dify">
+              <span class="step-marker"><span class="num">4</span></span>
+              <span class="step-copy"><span class="step-title">Dify 問答</span><span class="step-meta">登入後才能呼叫</span></span>
+            </a>
+          </nav>
+
+          <div class="sidebar-footer">
+            <div class="sidebar-health" id="sidebarHealth">
+              <span class="sidebar-health-dot" aria-hidden="true"></span>
+              <span><strong>服務狀態</strong><small>正在檢查 API…</small></span>
+            </div>
+            <a
+              class="sidebar-resource"
+              href="https://github.com/frobel0520/AI-Agent-Tutorial"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="resource-icon" aria-hidden="true">↗</span>
+              <span><strong>查看 GitHub 專案</strong><small>對照原始碼與文件</small></span>
+            </a>
+          </div>
+        </aside>
+
+        <div class="sidebar-backdrop hidden" id="sidebarBackdrop"></div>
+
+        <main class="content" id="mainContent">
+          <section class="hero">
+            <div class="hero-kicker"><span>GET STARTED</span><span class="hero-count">5 個步驟 · 約 10 分鐘</span></div>
+            <h1>從這裡開始學 RAG</h1>
+            <p>
+              你<strong>不需要先會寫程式</strong>。這個頁面會帶你一步一步操作：先建立筆記，再問問題，最後看 LLM
+              如何根據筆記回答。左側會告訴你現在在哪一步，以及按下按鈕後會發生什麼。
+            </p>
+            <div class="callout info" id="providerCallout">
+              正在連線到後端 API…
+            </div>
+          </section>
 
       <section class="panel" id="step-start">
         <h2>Step 0 · 我該從哪裡輸入？</h2>
@@ -244,7 +316,9 @@
 
         <h3>API 回傳（原始 JSON）</h3>
         <div id="difyResult" class="result-box">尚未呼叫 Dify。</div>
-      </section>
+        </section>
+        </main>
+      </div>
     </div>
 
     <script src="./static/js/config.js"></script>
