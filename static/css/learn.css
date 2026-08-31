@@ -554,6 +554,7 @@ a {
   padding: 14px 16px;
   margin: 16px 0;
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .callout.info {
