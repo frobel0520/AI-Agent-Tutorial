@@ -5,6 +5,7 @@ const DEFAULT_APP_NAME = "AI-Agent-Tutorial";
 const DEFAULT_TOP_K = 3;
 const MAX_RETRIEVAL_NOTES = 500;
 const MAX_WEBHOOK_RESPONSE_BODY = 2000;
+const MAX_INCOMING_WEBHOOK_BODY = 100_000;
 const WEBHOOK_TIMEOUT_MS = 10_000;
 const LLM_TIMEOUT_MS = 60_000;
 const DOCS_URL = "https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/docs";
@@ -125,7 +126,7 @@ function corsHeaders(request: Request): HeadersInit {
   }
 
   return {
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-event-type, x-webhook-signature",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Max-Age": "86400",
@@ -146,10 +147,10 @@ function jsonResponse(
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-async function readJsonBody(request: Request): Promise<JsonObject> {
+function parseJsonObject(rawBody: string): JsonObject {
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch {
     throw new HttpError(400, "Request body must be valid JSON.");
   }
@@ -158,6 +159,18 @@ async function readJsonBody(request: Request): Promise<JsonObject> {
     throw new HttpError(422, "Request body must be a JSON object.");
   }
   return body as JsonObject;
+}
+
+async function readJsonBody(request: Request): Promise<JsonObject> {
+  return parseJsonObject(await request.text());
+}
+
+async function readRawBody(request: Request, maxLength: number): Promise<string> {
+  const rawBody = await request.text();
+  if (rawBody.length > maxLength) {
+    throw new HttpError(413, "Request body is too large.");
+  }
+  return rawBody;
 }
 
 function requiredString(
@@ -577,6 +590,58 @@ async function signPayload(secret: string, payload: string): Promise<string> {
     .join("");
 }
 
+function constantTimeEqual(left: string, right: string): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
+async function receiveIncomingWebhook(request: Request): Promise<RouteResult> {
+  const secret = env("WEBHOOK_SECRET");
+  if (!secret) {
+    throw new HttpError(503, "WEBHOOK_SECRET is not configured.");
+  }
+
+  const rawBody = await readRawBody(request, MAX_INCOMING_WEBHOOK_BODY);
+  const receivedSignature = request.headers.get("X-Webhook-Signature")?.trim().toLowerCase() ?? "";
+  const expectedSignature = await signPayload(secret, rawBody);
+  if (!receivedSignature || !constantTimeEqual(receivedSignature, expectedSignature)) {
+    throw new HttpError(401, "Invalid webhook signature.");
+  }
+
+  const body = parseJsonObject(rawBody);
+  const sourceEventType = request.headers.get("X-Event-Type")?.trim() || "unknown";
+  const eventPayload = {
+    body,
+    received_at: new Date().toISOString(),
+    source: "supabase-self-webhook",
+    source_event_type: sourceEventType,
+  } satisfies JsonObject;
+  const eventResult = await supabase
+    .from("event_logs")
+    .insert({ event_type: "webhook.received", payload: JSON.stringify(eventPayload) })
+    .select("id,created_at")
+    .single();
+  if (eventResult.error) {
+    databaseError(eventResult.error, "incoming webhook recording");
+  }
+
+  return {
+    status: 202,
+    body: {
+      accepted: true,
+      event_id: (eventResult.data as EventInsertRow).id,
+      source_event_type: sourceEventType,
+    },
+  };
+}
+
 async function dispatchEvent(eventType: string, payload: JsonObject): Promise<void> {
   const serialized = JSON.stringify(payload);
   const eventResult = await supabase
@@ -847,6 +912,10 @@ async function routeRequest(request: Request): Promise<RouteResult> {
 
   if (resource === "ask" && !identifier && request.method === "POST") {
     return askQuestion(request);
+  }
+
+  if (resource === "hooks" && identifier === "incoming" && request.method === "POST") {
+    return receiveIncomingWebhook(request);
   }
 
   if (resource === "webhooks") {
