@@ -198,6 +198,20 @@ textarea {
   margin-top: 8px;
 }
 
+.auth-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.auth-status {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 button,
 .button {
   appearance: none;
