@@ -44,6 +44,14 @@ type EventInsertRow = {
   created_at: string;
 };
 
+type DifyAccessRow = {
+  enabled: boolean;
+};
+
+type AuthenticatedUser = {
+  id: string;
+};
+
 type RouteResult = {
   status: number;
   body: unknown;
@@ -107,6 +115,65 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServiceRoleKe
 function databaseError(error: { message?: string } | null, operation: string): never {
   console.error(`Supabase ${operation} failed`, error?.message ?? error);
   throw new HttpError(500, "Database operation failed.");
+}
+
+function bearerToken(request: Request): string {
+  const authorization = request.headers.get("Authorization")?.trim() ?? "";
+  const match = /^Bearer\s+(.+)$/i.exec(authorization);
+  if (!match?.[1]?.trim()) {
+    throw new HttpError(401, "Login is required to use Dify.");
+  }
+  return match[1].trim();
+}
+
+async function authenticatedUser(request: Request): Promise<AuthenticatedUser> {
+  const token = bearerToken(request);
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) {
+    console.error("Dify authentication failed", error?.message ?? "user not found");
+    throw new HttpError(401, "Your login session is invalid or expired.");
+  }
+  return { id: data.user.id };
+}
+
+async function difyAccessEnabled(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("dify_access")
+    .select("enabled")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) {
+    databaseError(error, "Dify access check");
+  }
+  return (data as DifyAccessRow | null)?.enabled === true;
+}
+
+async function requireDifyAccess(request: Request): Promise<void> {
+  const user = await authenticatedUser(request);
+  if (!await difyAccessEnabled(user.id)) {
+    throw new HttpError(403, "Your account is not authorized to use Dify.");
+  }
+}
+
+async function readDifyAccess(request: Request): Promise<RouteResult> {
+  try {
+    const user = await authenticatedUser(request);
+    return {
+      status: 200,
+      body: {
+        authenticated: true,
+        authorized: await difyAccessEnabled(user.id),
+      },
+    };
+  } catch (error) {
+    if (error instanceof HttpError && error.status === 401) {
+      return {
+        status: 200,
+        body: { authenticated: false, authorized: false },
+      };
+    }
+    throw error;
+  }
 }
 
 function corsHeaders(request: Request): HeadersInit {
@@ -804,6 +871,7 @@ async function listEvents(): Promise<RouteResult> {
 }
 
 async function askDify(request: Request): Promise<RouteResult> {
+  await requireDifyAccess(request);
   const body = await readJsonBody(request);
   const question = requiredString(body, "question");
   const user = typeof body.user === "undefined" ? "tutorial-user" : requiredString(body, "user");
@@ -936,6 +1004,10 @@ async function routeRequest(request: Request): Promise<RouteResult> {
 
   if (resource === "dify" && identifier === "ask" && request.method === "POST") {
     return askDify(request);
+  }
+
+  if (resource === "dify" && identifier === "access" && request.method === "GET") {
+    return readDifyAccess(request);
   }
 
   throw new HttpError(404, "Endpoint not found.");
