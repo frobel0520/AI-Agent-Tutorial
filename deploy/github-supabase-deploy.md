@@ -17,7 +17,7 @@
 
 1. 在 Supabase 建立專案。
 2. SQL Editor 執行 `supabase/schema.sql`。
-3. 若資料表已存在，再執行 `supabase/migrations/20260830000000_enable_rls_for_edge_api.sql`。
+3. 若資料表已存在，再執行 `supabase/migrations/20260830000000_enable_rls_for_edge_api.sql` 與 `20260831000000_add_dify_access.sql`。
 
 這個專案的瀏覽器請求全部經過 Edge Function；RLS migration 會阻擋瀏覽器直接讀寫資料表。Edge Function 使用 server-only service role key，因此該 key 絕不能放在 GitHub Pages。
 
@@ -64,9 +64,36 @@ supabase functions deploy api
 https://<your-project-ref>.supabase.co/functions/v1/api
 ```
 
-`supabase/config.toml` 已將 `verify_jwt` 設為 `false`，因為目前教學 API 沿用公開存取模式。若未來加入登入，應改成 JWT 驗證並在 Function 內檢查使用者權限。
+`supabase/config.toml` 維持 `verify_jwt = false`，因為同一個 Function 也接收外部 WebHook。Dify 路由會在 Function 內驗證 Supabase Auth JWT，並檢查 `dify_access` 授權表；WebHook 路由則維持 HMAC 驗證。
 
-## 4. 設定 GitHub Actions
+## 4. Google Auth 與 Dify 授權
+
+正式頁面使用 Supabase Auth 的 Google OAuth。GitHub Pages 需要下列 repository variables：
+
+| Name | Value |
+|------|-------|
+| `SUPABASE_PROJECT_URL` | `https://<project-ref>.supabase.co` |
+| `SUPABASE_PUBLISHABLE_KEY` | Supabase Project Settings → API 的 publishable/anon key |
+
+Supabase Dashboard → Authentication → Providers → Google：
+
+1. 在 Google Cloud 建立 Web OAuth Client。
+2. Authorized JavaScript origins 加入 GitHub Pages 網址。
+3. Authorized redirect URI 加入 `https://<project-ref>.supabase.co/auth/v1/callback`。
+4. 將 Client ID 與 Client Secret 貼入 Supabase 的 Google provider 並啟用。
+5. Authentication → URL Configuration 的 Site URL 設為 GitHub Pages 網址。
+
+使用者登入後，管理者再到 SQL Editor 授權指定帳號：
+
+```sql
+insert into public.dify_access (user_id)
+select id from auth.users where email = 'authorized@example.com'
+on conflict (user_id) do update set enabled = true;
+```
+
+只有登入且 `dify_access.enabled = true` 的使用者能呼叫 `/dify/ask`；訪客會收到 `401`，未授權帳號會收到 `403`。
+
+## 5. 設定 GitHub Actions
 
 在 GitHub repository 的 **Settings → Secrets and variables → Actions** 設定：
 
@@ -90,7 +117,7 @@ Repository 已包含：
 
 接著到 **Settings → Pages**，將 **Source** 設為 **GitHub Actions**，再 push 到 `main`。兩條 workflow 會依檔案變更自動執行。
 
-## 5. 驗收
+## 6. 驗收
 
 ```powershell
 Invoke-RestMethod https://<your-project-ref>.supabase.co/functions/v1/api/health
