@@ -34,6 +34,12 @@ create table if not exists webhook_deliveries (
     created_at timestamptz not null default now()
 );
 
+create table if not exists dify_access (
+    user_id uuid primary key references auth.users(id) on delete cascade,
+    enabled boolean not null default true,
+    created_at timestamptz not null default now()
+);
+
 create index if not exists idx_event_logs_created_at on event_logs (created_at desc);
 create index if not exists idx_notes_updated_at on notes (updated_at desc);
 
@@ -45,3 +51,6 @@ alter table if exists public.notes enable row level security;
 alter table if exists public.webhook_subscriptions enable row level security;
 alter table if exists public.event_logs enable row level security;
 alter table if exists public.webhook_deliveries enable row level security;
+alter table if exists public.dify_access enable row level security;
+
+revoke all on table public.dify_access from anon, authenticated;
