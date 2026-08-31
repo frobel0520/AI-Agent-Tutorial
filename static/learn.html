@@ -163,14 +163,19 @@
       <section class="panel" id="step-webhook">
         <h2>Step 3 · WebHook（POST /webhooks）</h2>
         <p class="lead">
-          當你建立筆記或完成問答，後端會把事件 POST 到你註冊的 URL。建議先用
-          <a href="https://webhook.site" target="_blank" rel="noreferrer">webhook.site</a> 取得測試 URL。
+          當你建立筆記或完成問答，後端會把事件 POST 到你註冊的 URL。你可以直接使用本專案的 Supabase 接收端點，資料會留在自己的資料庫。
         </p>
+
+        <div class="callout info">
+          <strong>本專案自有接收端點：</strong>
+          <code id="ownWebhookEndpoint">正在讀取 API 設定…</code><br />
+          這個端點會驗證 WebHook 簽章，再把收到的事件寫入 <code>event_logs</code>。
+        </div>
 
         <form id="webhookForm">
           <div class="field">
-            <label for="webhookUrl">WebHook URL（在這裡貼 webhook.site 連結）</label>
-            <input id="webhookUrl" name="url" placeholder="https://webhook.site/你的-id" required />
+            <label for="webhookUrl">WebHook 接收 URL</label>
+            <input id="webhookUrl" name="url" placeholder="https://你的接收服務/endpoint" required />
           </div>
           <div class="field">
             <label for="eventTypes">事件類型（逗號分隔，或 * 代表全部）</label>
@@ -178,12 +183,13 @@
           </div>
           <div class="actions">
             <button class="primary" type="submit">註冊 WebHook</button>
+            <button class="secondary" id="useOwnWebhookBtn" type="button">使用本專案 endpoint</button>
             <button class="secondary" id="loadEventsBtn" type="button">查看事件紀錄</button>
           </div>
         </form>
 
         <div class="callout info">
-          <strong>預期結果：</strong>註冊後，去 Step 1 建立筆記或 Step 2 提問，webhook.site 應收到 JSON 事件。
+          <strong>預期結果：</strong>註冊後建立一筆筆記，再按「查看事件紀錄」確認送出與接收事件。
         </div>
 
         <div id="webhookResult" class="result-box">尚未註冊 WebHook。</div>
