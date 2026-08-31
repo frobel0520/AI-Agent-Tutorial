@@ -33,6 +33,8 @@ jobs:
       - name: Prepare static site
         env:
           SUPABASE_FUNCTION_URL: ${{ vars.SUPABASE_FUNCTION_URL }}
+          SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           mkdir -p _site/static/css _site/static/js
           cp static/learn.html _site/index.html
@@ -40,7 +42,7 @@ jobs:
           cp static/css/learn.css _site/static/css/learn.css
           cp static/js/learn.js _site/static/js/learn.js
           if [ -n "$SUPABASE_FUNCTION_URL" ]; then
-            printf '%s\n' "window.APP_CONFIG = Object.freeze({ apiBaseUrl: \"$SUPABASE_FUNCTION_URL\" });" > _site/static/js/config.js
+            printf '%s\n' "window.APP_CONFIG = Object.freeze({ apiBaseUrl: \"$SUPABASE_FUNCTION_URL\", supabaseUrl: \"$SUPABASE_PROJECT_URL\", supabasePublishableKey: \"$SUPABASE_PUBLISHABLE_KEY\" });" > _site/static/js/config.js
           else
             cp static/js/config.js _site/static/js/config.js
           fi
