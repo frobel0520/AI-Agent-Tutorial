@@ -4,14 +4,30 @@ const API_BASE = (configuredApiBase || (isLocalDevelopment ? window.location.ori
   .replace(/\/$/, "");
 const API_DOCS_URL = "https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/docs";
 const OWN_WEBHOOK_PATH = "/hooks/incoming";
+const SUPABASE_URL = String(window.APP_CONFIG?.supabaseUrl || "").trim();
+const SUPABASE_PUBLISHABLE_KEY = String(window.APP_CONFIG?.supabasePublishableKey || "").trim();
+const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && window.supabase?.createClient
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: { autoRefreshToken: true, detectSessionInUrl: true, persistSession: true },
+    })
+  : null;
+
+let currentSession = null;
+let latestHealth = null;
+let difyAccessState = { authenticated: false, authorized: false };
+let difyAccessError = "";
 
 const statusBanner = document.getElementById("statusBanner");
 const providerCallout = document.getElementById("providerCallout");
 const mockExplain = document.getElementById("mockExplain");
 const difyExplain = document.getElementById("difyExplain");
+const difyAuthExplain = document.getElementById("difyAuthExplain");
 const difySubmitBtn = document.getElementById("difySubmitBtn");
 const ownWebhookEndpoint = document.getElementById("ownWebhookEndpoint");
 const useOwnWebhookBtn = document.getElementById("useOwnWebhookBtn");
+const authStatus = document.getElementById("authStatus");
+const googleSignInBtn = document.getElementById("googleSignInBtn");
+const signOutBtn = document.getElementById("signOutBtn");
 
 function showBanner(message, isError = false) {
   statusBanner.textContent = message;
@@ -24,9 +40,14 @@ async function api(path, options = {}) {
     throw new Error("尚未設定 Supabase Edge Function URL。請檢查 static/js/config.js 或 GitHub Pages repository variable。");
   }
 
+  const { headers: optionHeaders = {}, ...requestOptions } = options;
   const response = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options,
+    ...requestOptions,
+    headers: {
+      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
+      ...optionHeaders,
+    },
   });
 
   const text = await response.text();
@@ -106,6 +127,110 @@ function absoluteUrl(value, fallback) {
   }
 }
 
+async function getAuthHeaders() {
+  if (!authClient) {
+    return {};
+  }
+  const { data, error } = await authClient.auth.getSession();
+  if (error) {
+    throw error;
+  }
+  currentSession = data.session;
+  return currentSession?.access_token
+    ? { Authorization: `Bearer ${currentSession.access_token}` }
+    : {};
+}
+
+function updateDifyUi() {
+  const difyConfigured = Boolean(latestHealth?.dify_configured);
+  if (difySubmitBtn) {
+    difySubmitBtn.disabled = !(difyConfigured && difyAccessState.authorized);
+  }
+  if (!difyAuthExplain) {
+    return;
+  }
+  if (!authClient) {
+    difyAuthExplain.innerHTML = "<strong>Google 登入尚未設定</strong>，請完成 Supabase Auth 與 GitHub Pages 設定。";
+  } else if (!difyAccessState.authenticated) {
+    difyAuthExplain.innerHTML = "<strong>請先使用 Google 登入</strong>。訪客不能呼叫 Dify。";
+  } else if (!difyAccessState.authorized) {
+    difyAuthExplain.innerHTML = "<strong>已登入，但尚未取得 Dify 授權</strong>。請由管理者把你的帳號加入授權名單。";
+  } else if (!difyConfigured) {
+    difyAuthExplain.innerHTML = "<strong>帳號已授權</strong>，但 Dify 尚未完成 API 設定。";
+  } else {
+    difyAuthExplain.innerHTML = "<strong>已登入且已授權</strong>，現在可以呼叫 Dify。";
+  }
+  if (difyAccessError && difyAuthExplain) {
+    difyAuthExplain.insertAdjacentHTML("beforeend", `<br /><small>${escapeHtml(difyAccessError)}</small>`);
+  }
+}
+
+function renderAuthState(session) {
+  currentSession = session;
+  if (!authClient) {
+    if (authStatus) authStatus.textContent = "Google 登入尚未設定";
+    if (googleSignInBtn) googleSignInBtn.disabled = true;
+    if (signOutBtn) signOutBtn.hidden = true;
+    updateDifyUi();
+    return;
+  }
+  const user = session?.user;
+  if (user) {
+    if (authStatus) authStatus.textContent = `已登入：${user.email || "Google 帳號"}`;
+    if (googleSignInBtn) googleSignInBtn.hidden = true;
+    if (signOutBtn) signOutBtn.hidden = false;
+  } else {
+    if (authStatus) authStatus.textContent = "尚未登入";
+    if (googleSignInBtn) {
+      googleSignInBtn.hidden = false;
+      googleSignInBtn.disabled = false;
+    }
+    if (signOutBtn) signOutBtn.hidden = true;
+  }
+  updateDifyUi();
+}
+
+async function refreshDifyAccess() {
+  difyAccessError = "";
+  if (!currentSession) {
+    difyAccessState = { authenticated: false, authorized: false };
+    updateDifyUi();
+    return;
+  }
+  try {
+    const access = await api("/dify/access");
+    difyAccessState = {
+      authenticated: access.authenticated === true,
+      authorized: access.authorized === true,
+    };
+  } catch (error) {
+    difyAccessState = { authenticated: true, authorized: false };
+    difyAccessError = `授權狀態讀取失敗：${error.message}`;
+  }
+  updateDifyUi();
+}
+
+async function initAuth() {
+  renderAuthState(null);
+  if (!authClient) {
+    return;
+  }
+  const { data, error } = await authClient.auth.getSession();
+  if (error) {
+    throw error;
+  }
+  renderAuthState(data.session);
+  await refreshDifyAccess();
+  authClient.auth.onAuthStateChange((_event, session) => {
+    renderAuthState(session);
+    window.setTimeout(() => {
+      refreshDifyAccess().catch(() => {
+        /* the next user action will retry the access check */
+      });
+    }, 0);
+  });
+}
+
 async function loadHealth() {
   try {
     const health = await api("/health");
@@ -140,16 +265,17 @@ async function loadHealth() {
                 : "你應會看到較自然的 LLM 回答；仍請確認 <code>sources</code>。"
       }
     `;
+    latestHealth = health;
     if (difyExplain) {
       difyExplain.innerHTML = health.dify_configured
-        ? "<strong>Dify 已設定</strong>。可直接提問；若 502 請確認 Supabase Edge Function 能連到 Dify。"
-        : "<strong>Step 4 尚未設定</strong>，請在 Supabase Edge Function Secrets 設定 <code>DIFY_API_BASE</code> 與 <code>DIFY_API_KEY</code>；本機示範則可使用 <code>.env</code>。";
+        ? "<strong>Dify API 已設定</strong>。仍需 Google 登入並取得授權才能呼叫。"
+        : "<strong>Step 4 尚未設定</strong>，請先在 Supabase Secrets 設定 Dify Cloud API。";
     }
-    if (difySubmitBtn) {
-      difySubmitBtn.disabled = !health.dify_configured;
-    }
+    updateDifyUi();
     showBanner("已連線到後端 API，可以開始 Step 1。");
   } catch (error) {
+    latestHealth = null;
+    updateDifyUi();
     providerCallout.innerHTML = `<strong>連線失敗</strong>：${escapeHtml(error.message)}。請確認 Supabase Edge Function 已部署，且 Pages 的 <code>SUPABASE_FUNCTION_URL</code> 已設定。`;
     showBanner(`無法連線：${error.message}`, true);
   }
@@ -162,6 +288,34 @@ async function loadNotes() {
 }
 
 document.getElementById("refreshHealthBtn").addEventListener("click", loadHealth);
+
+googleSignInBtn?.addEventListener("click", async () => {
+  if (!authClient) {
+    showBanner("Google 登入尚未設定。", true);
+    return;
+  }
+  googleSignInBtn.disabled = true;
+  try {
+    const { error } = await authClient.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
+    });
+    if (error) throw error;
+  } catch (error) {
+    googleSignInBtn.disabled = false;
+    showBanner(`Google 登入失敗：${error.message}`, true);
+  }
+});
+
+signOutBtn?.addEventListener("click", async () => {
+  if (!authClient) return;
+  const { error } = await authClient.auth.signOut();
+  if (error) {
+    showBanner(`登出失敗：${error.message}`, true);
+    return;
+  }
+  showBanner("已登出 Google 帳號。");
+});
 
 document.getElementById("noteForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -287,6 +441,11 @@ loadHealth()
   .catch(() => {
     /* handled in loadHealth */
   });
+
+initAuth().catch((error) => {
+  difyAccessError = `登入狀態初始化失敗：${error.message}`;
+  renderAuthState(null);
+});
 
 if (ownWebhookEndpoint) {
   ownWebhookEndpoint.textContent = API_BASE
