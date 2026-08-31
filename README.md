@@ -51,6 +51,7 @@ python src\run.py
 | GET/PUT/DELETE | `/notes/{id}` | 讀取 / 更新 / 刪除 |
 | POST | `/ask` | LangChain RAG 問答 |
 | POST/GET/DELETE | `/webhooks` | WebHook 訂閱管理 |
+| POST | `/hooks/incoming` | 本專案自有 WebHook 接收端點 |
 | GET | `/events` | 事件紀錄 |
 | POST | `/dify/ask` | 呼叫 Dify（Phase 3） |
 
