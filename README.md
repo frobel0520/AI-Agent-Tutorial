@@ -87,7 +87,7 @@ pytest -q
 
 正式環境不使用 Render。架構如下：
 
-- GitHub Pages：發布 `static/` 學習台
+- GitHub Pages：發布 `frontend/` 的 React + Vite 學習台（建置產物為 `frontend/dist`）
 - Supabase Edge Function：提供 `/health`、`/notes`、`/ask`、`/webhooks`、`/events`、`/dify/ask`
 - Supabase Database：保存筆記、WebHook 訂閱、事件紀錄
 
@@ -100,6 +100,14 @@ pytest -q
 5. 將 GitHub Pages 的 source 設為 **GitHub Actions**；push 到 `main` 後會自動發布前端與 Edge Function。
 
 GitHub Pages 網站本身不存放任何 Supabase、LLM 或 Dify secret；前端只保存公開的 Function URL。
+
+本機預覽 React 前端：
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
 
 ## Dify（Phase 3）
 
@@ -117,7 +125,8 @@ src/app/
 supabase/functions/api/
   index.ts              # 正式環境 Edge Function API
 supabase/migrations/    # Supabase 安全設定
-static/                 # GitHub Pages 前端
+frontend/               # React + Vite GitHub Pages 前端
+static/                 # 本機 FastAPI 舊版回退頁面與資產
 docs/                  # 分章教學
 tests/                 # pytest
 Dockerfile              # 本機 Docker API

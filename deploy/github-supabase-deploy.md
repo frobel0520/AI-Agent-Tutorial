@@ -6,12 +6,14 @@
 
 ```text
 瀏覽器
-  ├─ GitHub Pages              static/learn.html
+  ├─ GitHub Pages              frontend/dist（React + Vite）
   └─ Supabase Edge Function    /functions/v1/api
        ├─ Supabase Database    notes / webhooks / events
        ├─ Groq / OpenAI / Gemini（選用）
        └─ Dify（選用）
 ```
+
+React 前端原始碼在 `frontend/src/`。GitHub Actions 會先執行 `npm ci` 與 `npm run build`，再將 `frontend/dist` 發布到 GitHub Pages；Supabase 的公開連線設定只在 build 時由 repository variables 注入。
 
 ## 1. 建立或確認 Supabase 專案
 
@@ -103,6 +105,8 @@ on conflict (user_id) do update set enabled = true;
 |------|-------|
 | `SUPABASE_PROJECT_REF` | Supabase project ref |
 | `SUPABASE_FUNCTION_URL` | `https://<project-ref>.supabase.co/functions/v1/api` |
+| `SUPABASE_PROJECT_URL` | `https://<project-ref>.supabase.co` |
+| `SUPABASE_PUBLISHABLE_KEY` | Supabase publishable/anon key |
 
 ### Secrets
 
@@ -116,6 +120,14 @@ Repository 已包含：
 - `.github/workflows/supabase-functions.yml`：部署 Supabase Edge Function
 
 接著到 **Settings → Pages**，將 **Source** 設為 **GitHub Actions**，再 push 到 `main`。兩條 workflow 會依檔案變更自動執行。
+
+本機只想預覽 React 前端時：
+
+```powershell
+cd C:\Users\ytwei\Projects\AI-Agent-Tutorial\frontend
+npm ci
+npm run dev
+```
 
 ## 6. 驗收
 
@@ -146,6 +158,7 @@ https://<github-owner>.github.io/<repository-name>/
 ## 與本機 FastAPI 的差異
 
 - `src/app/` 與 Docker Compose 保留給本機教學與 Ollama 使用。
+- GitHub Pages 正式入口是 `frontend/` 的 React 應用；`static/learn.html` 是本機 FastAPI 的舊版回退入口。
 - 正式 Edge Function 不使用 Python LangChain/Chroma，改用 Supabase 筆記上的輕量文字檢索。
 - `/docs` Swagger 只存在本機 FastAPI；正式環境請看 `docs/` 與本檔 API 路徑。
 - WebHook、Dify 與 LLM 的秘密都只存在 Supabase Function Secrets。
