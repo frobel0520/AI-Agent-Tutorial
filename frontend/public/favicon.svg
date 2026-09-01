@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">AI-Agent-Tutorial</title>
+  <desc id="desc">A book with connected knowledge nodes</desc>
+  <defs>
+    <linearGradient id="bg" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1d4ed8" />
+      <stop offset="1" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)" />
+  <path d="M32 18.5 22 13m10 5.5L42 13M22 13v7m20-7v7" fill="none" stroke="#5eead4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" />
+  <circle cx="22" cy="13" r="3.5" fill="#fef3c7" />
+  <circle cx="42" cy="13" r="3.5" fill="#fef3c7" />
+  <circle cx="32" cy="19" r="3.5" fill="#fef3c7" />
+  <path d="M10 25.5c6.8-3.4 13.8-3.2 22 1.5v26c-8.2-4.7-15.2-4.9-22-1.5v-26Z" fill="#fff" />
+  <path d="M54 25.5c-6.8-3.4-13.8-3.2-22 1.5v26c8.2-4.7 15.2-4.9 22-1.5v-26Z" fill="#ccfbf1" />
+  <path d="M32 27v26" fill="none" stroke="#1d4ed8" stroke-linecap="round" stroke-width="2" />
+  <path d="M15 33c4.8-1.4 9.2-.8 14 1.8M15 40c4.8-1.4 9.2-.8 14 1.8M49 33c-4.8-1.4-9.2-.8-14 1.8M49 40c-4.8-1.4-9.2-.8-14 1.8" fill="none" stroke="#93c5fd" stroke-linecap="round" stroke-width="2" />
+</svg>
