@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "static/**"
+      - "frontend/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -30,28 +30,24 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Prepare static site
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build React site
         env:
           SUPABASE_FUNCTION_URL: ${{ vars.SUPABASE_FUNCTION_URL }}
           SUPABASE_PROJECT_URL: ${{ vars.SUPABASE_PROJECT_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          mkdir -p _site/static/css _site/static/js
-          cp static/learn.html _site/index.html
-          cp static/favicon.svg _site/favicon.svg
-          cp static/css/learn.css _site/static/css/learn.css
-          cp static/js/learn.js _site/static/js/learn.js
-          if [ -n "$SUPABASE_FUNCTION_URL" ]; then
-            printf '%s\n' "window.APP_CONFIG = Object.freeze({ apiBaseUrl: \"$SUPABASE_FUNCTION_URL\", supabaseUrl: \"$SUPABASE_PROJECT_URL\", supabasePublishableKey: \"$SUPABASE_PUBLISHABLE_KEY\" });" > _site/static/js/config.js
-          else
-            cp static/js/config.js _site/static/js/config.js
-          fi
-          touch _site/.nojekyll
+          printf 'VITE_API_BASE_URL=%s\nVITE_SUPABASE_URL=%s\nVITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$SUPABASE_FUNCTION_URL" "$SUPABASE_PROJECT_URL" "$SUPABASE_PUBLISHABLE_KEY" > frontend/.env.production
+          npm run build --prefix frontend
+          touch frontend/dist/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: frontend/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

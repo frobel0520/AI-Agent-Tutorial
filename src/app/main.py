@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 _seed_lock = asyncio.Lock()
 _seed_done = False
 STATIC_DIR = Path(__file__).resolve().parents[2] / "static"
+FRONTEND_DIST_DIR = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 
 def seed_notes(settings: Settings) -> None:
@@ -110,9 +111,22 @@ def create_app() -> FastAPI:
 
     if STATIC_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    frontend_assets_dir = FRONTEND_DIST_DIR / "assets"
+    if frontend_assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(frontend_assets_dir)), name="frontend-assets")
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    def frontend_favicon() -> FileResponse:
+        built_favicon = FRONTEND_DIST_DIR / "favicon.svg"
+        if built_favicon.exists():
+            return FileResponse(built_favicon)
+        return FileResponse(STATIC_DIR / "favicon.svg")
 
     @app.get("/learn", include_in_schema=False)
     def learn_page() -> FileResponse:
+        built_entry = FRONTEND_DIST_DIR / "index.html"
+        if built_entry.exists():
+            return FileResponse(built_entry)
         return FileResponse(STATIC_DIR / "learn.html")
 
     @app.get("/", include_in_schema=False)
