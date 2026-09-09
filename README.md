@@ -12,6 +12,17 @@ Hands-on tutorial project for learning **LangChain**, **RESTful API**, **Dify**,
 | 2 | WebHook | [docs/03-webhook.md](docs/03-webhook.md) |
 | 3 | Dify 整合 | [docs/04-dify.md](docs/04-dify.md) |
 
+## 開發流程（SDLC）
+
+本專案沿用 Planning → SA → SD/ADR → Task DAG → CI/Release Gate 的交付流程：
+
+- [Project Plan](docs/01-project-plan.md)
+- [System Analysis](docs/02-system-analysis.md)
+- [System Design / ADR](docs/03-system-design.md)
+- [MVP Release Gate](docs/04-mvp-release-gate.md)
+
+功能開發使用 feature/<task-id>-<slug> 分支，依序經過 dev、main，並以 GitHub Actions 部署 GitHub Pages 與 Supabase Edge Function。
+
 ## 需求
 
 - Python 3.11+
