@@ -83,6 +83,13 @@ pip install -r requirements.txt
 pytest -q
 ```
 
+Edge API 與 PostgreSQL migration 測試（Deno 2）：
+
+```sh
+deno check supabase/functions/api/index.ts
+deno test --allow-read --allow-env supabase/functions/api/handler_test.ts supabase/tests/migration_test.ts
+```
+
 ## 上線部署（GitHub Pages + Supabase）
 
 正式環境不使用 Render。架構如下：
@@ -93,7 +100,7 @@ pytest -q
 
 完整步驟見 [deploy/github-supabase-deploy.md](deploy/github-supabase-deploy.md)。簡要流程：
 
-1. 在 Supabase SQL Editor 執行 `supabase/schema.sql`，再執行 RLS 與 `dify_access` migration。
+1. 在 Supabase SQL Editor 執行 `supabase/schema.sql`，再依序執行全部 `supabase/migrations/`（包含帳號資料隔離 migration）。
 2. 設定 Supabase Function Secrets：`SUPABASE_SERVICE_ROLE_KEY`、`LLM_PROVIDER` 與對應的 LLM key。
 3. 部署 `supabase/functions/api` Edge Function。
 4. 在 GitHub repository variables 設定 `SUPABASE_PROJECT_REF`、`SUPABASE_FUNCTION_URL`、`SUPABASE_PROJECT_URL` 與 `SUPABASE_PUBLISHABLE_KEY`。
@@ -113,7 +120,11 @@ npm run dev
 
 見 [docs/04-dify.md](docs/04-dify.md) 與 [deploy/dify-compose.note.md](deploy/dify-compose.note.md)。
 
-正式 Dify 呼叫需先使用 Google 登入，且帳號必須在 Supabase `dify_access` 授權表中。
+正式 API 的筆記、問答、WebHook 管理與事件需要 Google 登入，資料依帳號隔離。
+Dify 與非 mock 模型還需要 Supabase `dify_access` 授權；每帳號每小時最多 30 次模型請求（mock 也計數）。
+Webhook 只能投遞至管理者設定的完整 HTTPS URL，且不跟隨重新導向。
+
+既有共享資料不會自動歸屬任何帳號。**上線前先套用 migration**，並按 [安全部署說明](deploy/api-authorization-rollout.md) 處理資料與 WebHook 設定。
 
 ## 專案結構
 
@@ -123,7 +134,9 @@ src/app/
   routers/             # REST endpoints
   services/            # LangChain, WebHook, Dify
 supabase/functions/api/
-  index.ts              # 正式環境 Edge Function API
+  index.ts              # 正式環境啟動入口
+  handler.ts            # 驗證、帳號隔離與 API 路由
+  handler_test.ts       # 隔離環境 API 回歸測試
 supabase/migrations/    # Supabase 安全設定
 frontend/               # React + Vite GitHub Pages 前端
 static/                 # 本機 FastAPI 舊版回退頁面與資產
