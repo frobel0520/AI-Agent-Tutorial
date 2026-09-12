@@ -66,7 +66,9 @@ supabase functions deploy api
 https://<your-project-ref>.supabase.co/functions/v1/api
 ```
 
-`supabase/config.toml` 維持 `verify_jwt = false`，因為同一個 Function 也接收外部 WebHook。Dify 路由會在 Function 內驗證 Supabase Auth JWT，並檢查 `dify_access` 授權表；WebHook 路由則維持 HMAC 驗證。
+`supabase/config.toml` 維持 `verify_jwt = false`，因為同一個 Function 也接收外部 WebHook。除 health、登入狀態查詢與 HMAC WebHook 接收外，所有資料路由都在 Function 內驗證 Supabase Auth JWT 並依帳號隔離。Dify 與非 mock 模型另外檢查 `dify_access`；WebHook 接收的簽章涵蓋 body.user_id。
+
+**首次升級帳號隔離版，務必先完成 [安全部署順序](api-authorization-rollout.md)。**
 
 ## 4. Google Auth 與 Dify 授權
 
@@ -133,7 +135,8 @@ npm run dev
 
 ```powershell
 Invoke-RestMethod https://<your-project-ref>.supabase.co/functions/v1/api/health
-Invoke-RestMethod https://<your-project-ref>.supabase.co/functions/v1/api/notes
+# 未帶登入 token 的 /notes 應回 401（不是公開讀取）
+# Invoke-RestMethod https://<your-project-ref>.supabase.co/functions/v1/api/notes
 ```
 
 預期 `/health` 至少包含：
