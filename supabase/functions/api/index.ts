@@ -4,6 +4,7 @@ import {
   buildDifyPayload,
   consumeRateLimit,
   executeDifyRequest,
+  rateLimitRouteKey,
   SecurityError,
   validateWebhookDestination,
   webhookRequestInit,
@@ -1022,36 +1023,6 @@ function getRoute(request: Request): string[] {
   return pathname.split("/").filter(Boolean);
 }
 
-function rateLimitRouteKey(request: Request): string | null {
-  const route = getRoute(request);
-  const [resource, identifier] = route;
-  if ((route.length === 0 || resource === "health") && request.method === "GET") {
-    return null;
-  }
-
-  const normalizedMethod = ["GET", "POST", "PUT", "DELETE"].includes(request.method)
-    ? request.method
-    : "OTHER";
-
-  // Deliberately use fixed route classes, never a client-controlled path or id.
-  const routeClass = resource === "notes"
-    ? "notes"
-    : resource === "ask" && !identifier
-    ? "ask"
-    : resource === "webhooks"
-    ? "webhooks"
-    : resource === "events"
-    ? "events"
-    : resource === "hooks" && identifier === "incoming"
-    ? "incoming_webhooks"
-    : resource === "dify" && identifier === "ask"
-    ? "dify_ask"
-    : resource === "dify" && identifier === "access"
-    ? "dify_access"
-    : "other";
-  return `${normalizedMethod}:${routeClass}`;
-}
-
 function rateLimitAmount(routeKey: string): number {
   if (routeKey.includes("ask") || routeKey.includes("POST:dify")) {
     return RATE_LIMIT_EXTERNAL_CALLS_PER_WINDOW;
@@ -1187,7 +1158,7 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const routeKey = rateLimitRouteKey(request);
+    const routeKey = rateLimitRouteKey(request.method, getRoute(request));
     if (routeKey) {
       await enforceRateLimit(routeKey, "global", rateLimitAmount(routeKey));
     }
