@@ -114,6 +114,33 @@ test("API failure keeps the page rendered", async ({ page }) => {
   await expect(page.getByText("internal provider details must stay hidden")).toHaveCount(0);
 });
 
+test("422 shows the API's validation reason but not a structured detail", async ({ page }) => {
+  await openApp(page);
+  const responses = [
+    { detail: "content must contain between 1 and 20000 characters." },
+    { detail: [{ loc: ["body", "content"], msg: "internal validator trace" }] },
+  ];
+  await page.route("**/notes", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({ status: 422, contentType: "application/json", body: JSON.stringify(responses.shift()) });
+  });
+
+  await page.getByLabel("筆記標題").fill("smoke");
+  await page.getByLabel("筆記內容（LLM 之後會從這裡找答案）").fill("smoke content");
+
+  await page.getByRole("button", { name: "建立筆記" }).click();
+  await expect(page.locator("#noteResult")).toHaveText(
+    "422：輸入內容不符合要求：content must contain between 1 and 20000 characters.",
+  );
+
+  await page.getByRole("button", { name: "建立筆記" }).click();
+  await expect(page.locator("#noteResult")).toHaveText("422：輸入內容不符合要求，請檢查後再試。");
+  await expect(page.getByText("internal validator trace")).toHaveCount(0);
+});
+
 test("401, 403, and 429 are clear and do not trigger automatic retries", async ({ page }) => {
   const requests = [];
   await openApp(page, requests);
