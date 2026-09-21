@@ -44,7 +44,6 @@ jobs:
         run: npm run test:smoke
 
   deno-api:
-    if: ${{ hashFiles('supabase/functions/api/**/*_test.ts', 'supabase/functions/api/**/*.test.ts') != '' }}
     runs-on: ubuntu-latest
     services:
       postgres:
