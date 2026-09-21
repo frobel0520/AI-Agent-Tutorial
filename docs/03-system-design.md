@@ -55,7 +55,7 @@ flowchart LR
 |---|---|---|
 | notes | Supabase table + RLS | owner policy、欄位長度上限、必要索引 |
 | dify_access | 授權 table | admin-only mutation、撤銷可追蹤 |
-| webhook subscriptions | target、secret、owner | secret 不明文長期保存；target 先做 SSRF policy |
+| webhook subscriptions | target、secret；目前無 owner 欄位 | 本次採共用操作員權限及可信目的地；secret 加密保存另案處理 |
 | event logs | 接收／送出紀錄 | payload 大小上限、retention、去重 |
 | runtime secrets | Supabase Function Secrets | CI／local 使用 env，禁止進 repo |
 
@@ -116,3 +116,33 @@ flowchart LR
 - Task DAG 可直接拆成 feature branches。
 - API、secret、error、timeout 與部署邊界未依賴前端自律。
 - 未完成的安全工作已明確標示，不以「目前能跑」代替 production readiness。
+
+## 8. SEC-QA：安全與前端可靠性增量（2026-09-09）
+
+本次依使用者授權實作以下三個獨立驗收邊界；Luna 負責 coding，主代理負責契約、整合與驗證。以下是本次變更契約，不代表正式環境已部署。
+
+| Task ID | Goal／Output artifact | Input contract／Fixture | Acceptance checks | depends_on |
+|---|---|---|---|---|
+| SEC-QA-01 | Edge Webhook 權限與目的地限制 | Supabase JWT、dify_access、可信 HTTPS URL allowlist、偽造 fetch／DB | 未登入 401、未授權 403；註冊及舊訂閱 dispatch 均驗證 URL；拒絕 redirect 與未允許目的地 | SDLC-001 |
+| SEC-QA-02 | Dify 身分與共享 API 限流 | 經驗證的 auth UUID、原子 Postgres rate-limit RPC、假時鐘／RPC | Dify 不採信 body.user；超額 429 + Retry-After；限流儲存失敗 503；跨 instance 使用共同計數 | SDLC-001 |
+| SEC-QA-03 | React Error Boundary 與瀏覽器 smoke | 真實 production build、模擬 API／Auth、測試專用拋錯元件 | 頁面可渲染；API 失敗仍有 UI；render 例外有 fallback；401/403/429 明確呈現 | SDLC-001 |
+
+證據位置：supabase/functions/api/ 測試、frontend/ smoke 測試與 CI 執行紀錄；實際指令與結果記錄於 release gate。
+
+### ADR-006：Webhook 管理限授權帳號與明確可信目的地
+
+- 筆記與一般 RAG 維持共用教學沙盒，不在此增量改為個人資料空間。
+- Webhook 管理及事件紀錄使用現有 dify_access allowlist 作為教學操作員權限；登入本身不代表有管理權。
+- Webhook 目的地由管理者設定精確 HTTPS URL allowlist，空值禁止 outbound；每次送出重新檢查，禁止 redirect。清單只能放管理者信任且不會解析到內網的 endpoint。
+- 這是共用操作員模型，不是各使用者分別擁有訂閱；若需多租戶隔離，再獨立設計 ownership migration。
+
+### ADR-007：共享限流與不可偽造的 Dify 身分
+
+- Dify user 取自驗證成功的 Supabase UUID，不採用瀏覽器提供的 user。
+- 公開 API 以 Postgres 原子計數實作跨 instance 的全域路由額度，避免單一 instance 記憶體計數或可偽造 IP header 被繞過；Dify 可額外限制每帳號用量。
+- 超額回 429 並提供等待秒數；限流資料庫不可用時 fail closed。全域額度意味某位訪客可能耗盡共享窗口，但能限制整體服務消耗。
+- 不新增付費服務；仍消耗既有 Supabase 額度。migration 必須先於新 Edge Function 上線。
+
+### Out of scope
+
+本次不包含 webhook replay／outbox 重試、多租戶筆記隔離、FastAPI 本機安全改造、全面 CORS 重設及正式部署。前端 smoke 使用測試資料，不消耗真實 Dify 額度。Error Boundary 不保證攔截 JS bundle 下載或模組載入前的錯誤。
