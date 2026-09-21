@@ -23,8 +23,11 @@
 1. Supabase Dashboard → **SQL Editor**
 2. 貼上並執行本 repo 的 `supabase/schema.sql`
 3. 若資料表原本已存在，再執行 `supabase/migrations/20260830000000_enable_rls_for_edge_api.sql`
+4. **一律執行** `supabase/migrations/20260909000000_add_edge_rate_limit.sql`（API 限流；`schema.sql` 沒有包含）
 
 RLS migration 會阻止 `anon` 與 `authenticated` 直接讀寫這四張表；Edge Function 使用 server-only service role key 執行資料庫操作。
+
+> ⚠️ 限流 migration 必須在部署新版 Edge Function **之前**完成。限流表不存在時 API 會 fail closed，除了 `GET /health` 以外的路由都回 503。
 
 ## Step 3 — 設定 Function Secrets
 
@@ -34,7 +37,10 @@ RLS migration 會阻止 `anon` 與 `authenticated` 直接讀寫這四張表；Ed
 SUPABASE_SERVICE_ROLE_KEY=<Project Settings → API 的 service role key>
 LLM_PROVIDER=mock
 WEBHOOK_SECRET=<一組隨機字串>
+WEBHOOK_ALLOWED_URLS=https://webhook.site/<your-id>
 ```
+
+`WEBHOOK_ALLOWED_URLS` 是允許送出 WebHook 的 HTTPS 網址清單，逗號分隔，必須**完全相同**才放行（不支援萬用字元，不可含 port、帳密或 `#`）。留空時 WebHook 功能停用：註冊回 503，既有訂閱每次送出都記為失敗。只放你信任、且不會解析到內網的 endpoint。
 
 若要使用 Groq：
 

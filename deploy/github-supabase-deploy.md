@@ -20,6 +20,7 @@ React 前端原始碼在 `frontend/src/`。GitHub Actions 會先執行 `npm ci` 
 1. 在 Supabase 建立專案。
 2. SQL Editor 執行 `supabase/schema.sql`。
 3. 若資料表已存在，再執行 `supabase/migrations/20260830000000_enable_rls_for_edge_api.sql` 與 `20260831000000_add_dify_access.sql`。
+4. **一律執行** `supabase/migrations/20260909000000_add_edge_rate_limit.sql`（API 限流；`schema.sql` 沒有包含）。
 
 這個專案的瀏覽器請求全部經過 Edge Function；RLS migration 會阻擋瀏覽器直接讀寫資料表。Edge Function 使用 server-only service role key，因此該 key 絕不能放在 GitHub Pages。
 
@@ -38,6 +39,7 @@ React 前端原始碼在 `frontend/src/`。GitHub Actions 會先執行 `npm ci` 
 | `GOOGLE_API_KEY` | 使用 Gemini 時 | Google AI API key |
 | `GEMINI_MODEL` | 使用 Gemini 時 | 有效的 Gemini model 名稱 |
 | `WEBHOOK_SECRET` | 否 | 訂閱未提供個別 secret 時使用 |
+| `WEBHOOK_ALLOWED_URLS` | 使用 WebHook 時 | 允許送出的 HTTPS 網址，逗號分隔、完全相同才放行；留空則註冊回 503、既有訂閱送出記為失敗 |
 | `CORS_ORIGINS` | 否 | 逗號分隔的允許來源；空白時為公開教學模式 |
 | `DIFY_API_BASE` | 使用 Dify 時 | Dify 的 `/v1` API URL |
 | `DIFY_API_KEY` | 使用 Dify 時 | Dify Chat App API key |
@@ -53,6 +55,8 @@ supabase functions deploy api
 本機測試可在 `supabase/functions/.env` 放入上述設定；該路徑已列入 `.gitignore`。
 
 ## 3. 部署 Edge Function
+
+> ⚠️ push 到 `main` 且改到 `supabase/functions/**` 時，`.github/workflows/supabase-functions.yml` 會**自動部署** Edge Function，但**不會**執行 migration。含新 migration 的 PR 進 `main` 之前，先在 SQL Editor 執行該 migration（目前是 `20260909000000_add_edge_rate_limit.sql`），並設定好 `WEBHOOK_ALLOWED_URLS`。限流表不存在時 API 會 fail closed，除了 `GET /health` 以外都回 503。
 
 手動部署：
 
