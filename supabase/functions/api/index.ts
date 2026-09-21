@@ -1,4 +1,13 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import {
+  authorizeDifyUser,
+  buildDifyPayload,
+  consumeRateLimit,
+  executeDifyRequest,
+  SecurityError,
+  validateWebhookDestination,
+  webhookRequestInit,
+} from "./security.ts";
 
 const FUNCTION_NAME = "api";
 const DEFAULT_APP_NAME = "AI-Agent-Tutorial";
@@ -6,8 +15,18 @@ const DEFAULT_TOP_K = 3;
 const MAX_RETRIEVAL_NOTES = 500;
 const MAX_WEBHOOK_RESPONSE_BODY = 2000;
 const MAX_INCOMING_WEBHOOK_BODY = 100_000;
+const MAX_JSON_BODY_BYTES = 256_000;
+const MAX_NOTE_CONTENT_LENGTH = 20_000;
+const MAX_QUESTION_LENGTH = 4_000;
+const MAX_WEBHOOK_SUBSCRIPTIONS_PER_EVENT = 5;
 const WEBHOOK_TIMEOUT_MS = 10_000;
 const LLM_TIMEOUT_MS = 60_000;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+const RATE_LIMIT_READS_PER_WINDOW = 120;
+const RATE_LIMIT_WRITES_PER_WINDOW = 30;
+const RATE_LIMIT_EXTERNAL_CALLS_PER_WINDOW = 10;
+const RATE_LIMIT_INCOMING_WEBHOOKS_PER_WINDOW = 30;
+const RATE_LIMIT_DIFY_USER_PER_WINDOW = 10;
 const DOCS_URL = "https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/docs";
 const NOTE_COLUMNS = "id,title,content,created_at,updated_at";
 const SYSTEM_PROMPT =
@@ -61,6 +80,7 @@ class HttpError extends Error {
   constructor(
     public readonly status: number,
     public readonly detail: string,
+    public readonly headers: HeadersInit = {},
   ) {
     super(detail);
     this.name = "HttpError";
@@ -149,10 +169,28 @@ async function difyAccessEnabled(userId: string): Promise<boolean> {
 }
 
 async function requireDifyAccess(request: Request): Promise<void> {
+  await requireDifyUser(request);
+}
+
+async function requireDifyUser(request: Request): Promise<AuthenticatedUser> {
+  const user = await authenticatedUser(request);
+  try {
+    authorizeDifyUser(user, await difyAccessEnabled(user.id));
+  } catch (error) {
+    if (error instanceof SecurityError) {
+      throw new HttpError(error.status, error.message, error.headers);
+    }
+    throw error;
+  }
+  return user;
+}
+
+async function requireOperatorAccess(request: Request): Promise<AuthenticatedUser> {
   const user = await authenticatedUser(request);
   if (!await difyAccessEnabled(user.id)) {
-    throw new HttpError(403, "Your account is not authorized to use Dify.");
+    throw new HttpError(403, "Operator access requires an enabled dify_access record.");
   }
+  return user;
 }
 
 async function readDifyAccess(request: Request): Promise<RouteResult> {
@@ -197,6 +235,7 @@ function corsHeaders(request: Request): HeadersInit {
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Max-Age": "86400",
+    "Access-Control-Expose-Headers": "Retry-After",
     "Content-Type": "application/json; charset=utf-8",
     Vary: "Origin",
   };
@@ -206,8 +245,10 @@ function jsonResponse(
   body: unknown,
   status: number,
   request: Request,
+  extraHeaders: HeadersInit = {},
 ): Response {
   const headers = corsHeaders(request);
+  Object.assign(headers, extraHeaders);
   if (status === 204) {
     return new Response(null, { status, headers });
   }
@@ -229,15 +270,48 @@ function parseJsonObject(rawBody: string): JsonObject {
 }
 
 async function readJsonBody(request: Request): Promise<JsonObject> {
-  return parseJsonObject(await request.text());
+  return parseJsonObject(await readRawBody(request, MAX_JSON_BODY_BYTES));
 }
 
 async function readRawBody(request: Request, maxLength: number): Promise<string> {
-  const rawBody = await request.text();
-  if (rawBody.length > maxLength) {
-    throw new HttpError(413, "Request body is too large.");
+  const contentLength = request.headers.get("Content-Length");
+  if (contentLength) {
+    const declaredLength = Number(contentLength);
+    if (Number.isFinite(declaredLength) && declaredLength > maxLength) {
+      throw new HttpError(413, "Request body is too large.");
+    }
   }
-  return rawBody;
+
+  if (!request.body) {
+    return "";
+  }
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      totalBytes += value.byteLength;
+      if (totalBytes > maxLength) {
+        await reader.cancel();
+        throw new HttpError(413, "Request body is too large.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
 }
 
 function requiredString(
@@ -319,7 +393,7 @@ async function findNote(noteId: number): Promise<NoteRow> {
 async function createNote(request: Request): Promise<RouteResult> {
   const body = await readJsonBody(request);
   const title = requiredString(body, "title", 1, 200);
-  const content = requiredString(body, "content");
+  const content = requiredString(body, "content", 1, MAX_NOTE_CONTENT_LENGTH);
   const { data, error } = await supabase
     .from("notes")
     .insert({ title, content })
@@ -338,7 +412,7 @@ async function updateNote(request: Request, noteId: number): Promise<RouteResult
   await findNote(noteId);
   const body = await readJsonBody(request);
   const title = optionalString(body, "title", 1, 200);
-  const content = optionalString(body, "content");
+  const content = optionalString(body, "content", 1, MAX_NOTE_CONTENT_LENGTH);
   if (title === null && content === null) {
     throw new HttpError(422, "At least one of title or content is required.");
   }
@@ -724,13 +798,36 @@ async function dispatchEvent(eventType: string, payload: JsonObject): Promise<vo
   const subscriptionsResult = await supabase
     .from("webhook_subscriptions")
     .select("id,url,event_types,secret,created_at")
-    .order("id", { ascending: true });
+    .order("id", { ascending: true })
+    .limit(MAX_WEBHOOK_SUBSCRIPTIONS_PER_EVENT);
   if (subscriptionsResult.error) {
     databaseError(subscriptionsResult.error, "webhook subscription listing");
   }
 
   for (const subscription of (subscriptionsResult.data ?? []) as WebhookSubscriptionRow[]) {
     if (!matchesEvent(subscription, eventType)) {
+      continue;
+    }
+
+    let validatedUrl: string;
+    try {
+      // Revalidate on every dispatch so legacy rows cannot bypass the current allowlist.
+      validatedUrl = validateWebhookDestination(subscription.url, env("WEBHOOK_ALLOWED_URLS"));
+    } catch (error) {
+      const responseBody = error instanceof SecurityError
+        ? "Webhook delivery rejected by destination policy."
+        : "Webhook delivery rejected.";
+      const rejectedDelivery = await supabase.from("webhook_deliveries").insert({
+        created_at: new Date().toISOString(),
+        event_id: event.id,
+        response_body: responseBody,
+        status_code: null,
+        subscription_id: subscription.id,
+        success: 0,
+      });
+      if (rejectedDelivery.error) {
+        databaseError(rejectedDelivery.error, "webhook delivery recording");
+      }
       continue;
     }
 
@@ -755,15 +852,15 @@ async function dispatchEvent(eventType: string, payload: JsonObject): Promise<vo
     let success = 0;
     try {
       const response = await fetchWithTimeout(
-        subscription.url,
-        { method: "POST", headers, body: bodyText },
+        validatedUrl,
+        webhookRequestInit(bodyText, headers),
         WEBHOOK_TIMEOUT_MS,
       );
       statusCode = response.status;
       responseBody = (await response.text()).slice(0, MAX_WEBHOOK_RESPONSE_BODY);
       success = response.status < 400 ? 1 : 0;
     } catch (error) {
-      responseBody = error instanceof Error ? error.message : String(error);
+      responseBody = "Webhook delivery failed.";
     }
 
     const deliveryResult = await supabase.from("webhook_deliveries").insert({
@@ -782,7 +879,7 @@ async function dispatchEvent(eventType: string, payload: JsonObject): Promise<vo
 
 async function askQuestion(request: Request): Promise<RouteResult> {
   const body = await readJsonBody(request);
-  const question = requiredString(body, "question");
+  const question = requiredString(body, "question", 1, MAX_QUESTION_LENGTH);
   const topK = parseTopK(body);
   const notes = await listNotes();
   const sources = selectRelevantNotes(notes, question, topK);
@@ -799,7 +896,8 @@ async function askQuestion(request: Request): Promise<RouteResult> {
   };
 }
 
-async function listWebhooks(): Promise<RouteResult> {
+async function listWebhooks(request: Request): Promise<RouteResult> {
+  await requireOperatorAccess(request);
   const { data, error } = await supabase
     .from("webhook_subscriptions")
     .select("id,url,event_types,created_at")
@@ -811,25 +909,34 @@ async function listWebhooks(): Promise<RouteResult> {
 }
 
 async function createWebhook(request: Request): Promise<RouteResult> {
+  await requireOperatorAccess(request);
   const body = await readJsonBody(request);
   const url = requiredString(body, "url", 1, 500);
-  let parsedUrl: URL;
   try {
-    parsedUrl = new URL(url);
-  } catch {
-    throw new HttpError(422, "url must be a valid HTTP or HTTPS URL.");
-  }
-  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-    throw new HttpError(422, "url must be a valid HTTP or HTTPS URL.");
+    validateWebhookDestination(url, env("WEBHOOK_ALLOWED_URLS"));
+  } catch (error) {
+    if (error instanceof SecurityError) {
+      throw new HttpError(error.status, error.message, error.headers);
+    }
+    throw error;
   }
 
   const eventTypes = typeof body.event_types === "undefined"
     ? "*"
     : requiredString(body, "event_types", 1, 200);
   const secret = optionalString(body, "secret", 1, 200);
+  const subscriptionCount = await supabase
+    .from("webhook_subscriptions")
+    .select("id", { count: "exact", head: true });
+  if (subscriptionCount.error) {
+    databaseError(subscriptionCount.error, "webhook subscription count");
+  }
+  if ((subscriptionCount.count ?? 0) >= MAX_WEBHOOK_SUBSCRIPTIONS_PER_EVENT) {
+    throw new HttpError(429, "The webhook subscription limit has been reached.");
+  }
   const { data, error } = await supabase
     .from("webhook_subscriptions")
-    .insert({ event_types: eventTypes, secret, url })
+    .insert({ event_types: eventTypes, secret, url: validateWebhookDestination(url, env("WEBHOOK_ALLOWED_URLS")) })
     .select("id,url,event_types,created_at")
     .single();
   if (error) {
@@ -838,7 +945,8 @@ async function createWebhook(request: Request): Promise<RouteResult> {
   return { status: 201, body: data };
 }
 
-async function deleteWebhook(webhookId: number): Promise<RouteResult> {
+async function deleteWebhook(request: Request, webhookId: number): Promise<RouteResult> {
+  await requireOperatorAccess(request);
   const { data, error: lookupError } = await supabase
     .from("webhook_subscriptions")
     .select("id")
@@ -858,7 +966,8 @@ async function deleteWebhook(webhookId: number): Promise<RouteResult> {
   return { status: 204, body: null };
 }
 
-async function listEvents(): Promise<RouteResult> {
+async function listEvents(request: Request): Promise<RouteResult> {
+  await requireOperatorAccess(request);
   const { data, error } = await supabase
     .from("event_logs")
     .select("id,event_type,payload,created_at")
@@ -871,35 +980,18 @@ async function listEvents(): Promise<RouteResult> {
 }
 
 async function askDify(request: Request): Promise<RouteResult> {
-  await requireDifyAccess(request);
-  const body = await readJsonBody(request);
-  const question = requiredString(body, "question");
-  const user = typeof body.user === "undefined" ? "tutorial-user" : requiredString(body, "user");
-  const baseUrl = requireConfiguration("DIFY_API_BASE").replace(/\/$/, "");
-  const apiKey = requireConfiguration("DIFY_API_KEY");
-  const response = await fetchWithTimeout(
-    `${baseUrl}/chat-messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        conversation_id: "",
-        inputs: {},
-        query: question,
-        response_mode: "blocking",
-        user,
-      }),
-    },
-    LLM_TIMEOUT_MS,
-  );
-  const data = await responseData(response);
-  if (!response.ok) {
-    console.error("Dify request failed", response.status, errorMessage(data, "unknown error"));
-    throw new HttpError(502, "Dify request failed.");
-  }
+  const result = await executeDifyRequest({
+    accessEnabled: difyAccessEnabled,
+    apiKey: requireConfiguration("DIFY_API_KEY"),
+    authenticate: () => authenticatedUser(request),
+    baseUrl: requireConfiguration("DIFY_API_BASE"),
+    fetch: (input, init) => fetchWithTimeout(input, init, LLM_TIMEOUT_MS),
+    maxQuestionLength: MAX_QUESTION_LENGTH,
+    onAuthorized: (userId) => enforceRateLimit("POST:dify_ask", `user:${userId}`, RATE_LIMIT_DIFY_USER_PER_WINDOW),
+    readBody: () => readJsonBody(request),
+  });
+  const question = result.question;
+  const data = result.data;
 
   const objectData: JsonObject = data && typeof data === "object" && !Array.isArray(data)
     ? data as JsonObject
@@ -930,6 +1022,84 @@ function getRoute(request: Request): string[] {
     }
   }
   return pathname.split("/").filter(Boolean);
+}
+
+function rateLimitRouteKey(request: Request): string | null {
+  const route = getRoute(request);
+  const [resource, identifier] = route;
+  if ((route.length === 0 || resource === "health") && request.method === "GET") {
+    return null;
+  }
+
+  const normalizedMethod = ["GET", "POST", "PUT", "DELETE"].includes(request.method)
+    ? request.method
+    : "OTHER";
+
+  // Deliberately use fixed route classes, never a client-controlled path or id.
+  const routeClass = resource === "notes"
+    ? "notes"
+    : resource === "ask" && !identifier
+    ? "ask"
+    : resource === "webhooks"
+    ? "webhooks"
+    : resource === "events"
+    ? "events"
+    : resource === "hooks" && identifier === "incoming"
+    ? "incoming_webhooks"
+    : resource === "dify" && identifier === "ask"
+    ? "dify_ask"
+    : resource === "dify" && identifier === "access"
+    ? "dify_access"
+    : "other";
+  return `${normalizedMethod}:${routeClass}`;
+}
+
+function rateLimitAmount(routeKey: string): number {
+  if (routeKey.includes("ask") || routeKey.includes("POST:dify")) {
+    return RATE_LIMIT_EXTERNAL_CALLS_PER_WINDOW;
+  }
+  if (routeKey.includes("incoming_webhooks")) {
+    return RATE_LIMIT_INCOMING_WEBHOOKS_PER_WINDOW;
+  }
+  if (routeKey.startsWith("GET:")) {
+    return RATE_LIMIT_READS_PER_WINDOW;
+  }
+  return RATE_LIMIT_WRITES_PER_WINDOW;
+}
+
+async function enforceRateLimit(
+  routeKey: string,
+  bucketKey: string,
+  limit: number,
+): Promise<void> {
+  try {
+    await consumeRateLimit(
+      async (args) => {
+        const { data, error } = await supabase.rpc("consume_api_rate_limit", args);
+        if (error) {
+          throw new Error(error.message);
+        }
+        const row = Array.isArray(data) ? data[0] : data;
+        return row
+          ? {
+            allowed: row.allowed === true,
+            retry_after_seconds: Number(row.retry_after_seconds) || 1,
+          }
+          : null;
+      },
+      {
+        p_route_key: routeKey,
+        p_bucket_key: bucketKey,
+        p_limit: limit,
+        p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+      },
+    );
+  } catch (error) {
+    if (error instanceof SecurityError) {
+      throw new HttpError(error.status, error.message, error.headers);
+    }
+    throw error;
+  }
 }
 
 async function routeRequest(request: Request): Promise<RouteResult> {
@@ -988,18 +1158,18 @@ async function routeRequest(request: Request): Promise<RouteResult> {
 
   if (resource === "webhooks") {
     if (!identifier && request.method === "GET") {
-      return listWebhooks();
+      return listWebhooks(request);
     }
     if (!identifier && request.method === "POST") {
       return createWebhook(request);
     }
     if (identifier && request.method === "DELETE") {
-      return deleteWebhook(parseId(identifier));
+      return deleteWebhook(request, parseId(identifier));
     }
   }
 
   if (resource === "events" && !identifier && request.method === "GET") {
-    return listEvents();
+    return listEvents(request);
   }
 
   if (resource === "dify" && identifier === "ask" && request.method === "POST") {
@@ -1019,11 +1189,18 @@ Deno.serve(async (request) => {
   }
 
   try {
+    const routeKey = rateLimitRouteKey(request);
+    if (routeKey) {
+      await enforceRateLimit(routeKey, "global", rateLimitAmount(routeKey));
+    }
     const result = await routeRequest(request);
     return jsonResponse(result.body, result.status, request);
   } catch (error) {
     if (error instanceof HttpError) {
-      return jsonResponse({ detail: error.detail }, error.status, request);
+      return jsonResponse({ detail: error.detail }, error.status, request, error.headers);
+    }
+    if (error instanceof SecurityError) {
+      return jsonResponse({ detail: error.message }, error.status, request, error.headers);
     }
     console.error("Unhandled API error", error);
     return jsonResponse({ detail: "Internal server error." }, 500, request);

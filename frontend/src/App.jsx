@@ -22,6 +22,16 @@ const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
     })
   : null;
 
+const API_ERROR_MESSAGES = {
+  401: "登入狀態已失效或缺少登入，請重新登入。",
+  403: "你沒有權限執行此操作。",
+  429: "請求過於頻繁，請稍後再試。",
+};
+
+function apiErrorMessage(status) {
+  return API_ERROR_MESSAGES[status] || "服務目前無法完成請求，請稍後再試。";
+}
+
 function readStoredTheme() {
   try {
     const storedTheme = window.localStorage.getItem("ai-agent-tutorial-theme");
@@ -480,20 +490,20 @@ function App() {
       ...requestOptions,
       headers: {
         "Content-Type": "application/json",
-        ...(await getAuthHeaders()),
         ...optionHeaders,
+        // Prefer the current Supabase session over caller-provided headers.
+        ...(await getAuthHeaders()),
       },
     });
     const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`${response.status}：${apiErrorMessage(response.status)}`);
+    }
     let data = text;
     try {
       data = text ? JSON.parse(text) : null;
     } catch {
       data = text;
-    }
-    if (!response.ok) {
-      const detail = typeof data === "object" && data?.detail ? JSON.stringify(data.detail) : text;
-      throw new Error(`${response.status} ${response.statusText}: ${detail || "請稍後再試"}`);
     }
     return data;
   }, [getAuthHeaders]);
