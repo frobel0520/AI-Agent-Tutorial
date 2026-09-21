@@ -21,6 +21,46 @@ export type RateLimitRpc = (args: {
   p_window_seconds: number;
 }) => Promise<RateLimitRpcResult | null>;
 
+// Must stay identical to the p_route_key allowlist in consume_api_rate_limit
+// (supabase/migrations/20260909000000_add_edge_rate_limit.sql); security_test.ts checks it.
+export const RATE_LIMIT_ROUTE_KEYS: ReadonlySet<string> = new Set([
+  "GET:notes", "POST:notes", "PUT:notes", "DELETE:notes",
+  "POST:ask", "GET:webhooks", "POST:webhooks", "DELETE:webhooks",
+  "GET:events", "POST:incoming_webhooks", "POST:dify_ask",
+  "GET:dify_access", "GET:other", "POST:other", "PUT:other",
+  "DELETE:other", "OTHER:other",
+]);
+
+export function rateLimitRouteKey(method: string, route: readonly string[]): string | null {
+  const [resource, identifier] = route;
+  if ((route.length === 0 || resource === "health") && method === "GET") {
+    return null;
+  }
+
+  const normalizedMethod = ["GET", "POST", "PUT", "DELETE"].includes(method) ? method : "OTHER";
+
+  // Deliberately use fixed route classes, never a client-controlled path or id.
+  const routeClass = resource === "notes"
+    ? "notes"
+    : resource === "ask" && !identifier
+    ? "ask"
+    : resource === "webhooks"
+    ? "webhooks"
+    : resource === "events"
+    ? "events"
+    : resource === "hooks" && identifier === "incoming"
+    ? "incoming_webhooks"
+    : resource === "dify" && identifier === "ask"
+    ? "dify_ask"
+    : resource === "dify" && identifier === "access"
+    ? "dify_access"
+    : "other";
+  const routeKey = `${normalizedMethod}:${routeClass}`;
+  // A method the route does not serve (e.g. GET /ask) must still map to a key the
+  // database accepts, so the router can answer 404/405 instead of a 503.
+  return RATE_LIMIT_ROUTE_KEYS.has(routeKey) ? routeKey : `${normalizedMethod}:other`;
+}
+
 const IPV4_OCTET_COUNT = 4;
 
 function isPrivateIpv4(address: string): boolean {
