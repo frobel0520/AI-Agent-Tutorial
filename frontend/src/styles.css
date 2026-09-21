@@ -471,6 +471,25 @@ a {
   padding: 36px clamp(20px, 4vw, 64px) 80px;
 }
 
+.offline-notice {
+  max-width: 960px;
+  margin: 0 auto 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--warn);
+  border-radius: 12px;
+  background: var(--warn-soft);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.offline-notice strong {
+  color: var(--warn);
+}
+
+.offline-notice p {
+  margin: 6px 0 0;
+}
+
 .hero {
   position: relative;
   overflow: hidden;
