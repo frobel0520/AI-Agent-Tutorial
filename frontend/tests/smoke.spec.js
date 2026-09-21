@@ -135,7 +135,8 @@ test("401, 403, and 429 are clear and do not trigger automatic retries", async (
     [429, "請求過於頻繁，請稍後再試。"],
   ]) {
     await page.getByRole("button", { name: "註冊 WebHook" }).click();
-    await expect(page.getByText(`${status}：${message}`)).toBeVisible();
+    // The same message also appears in the global status banner; assert the webhook result box.
+    await expect(page.locator("#webhookResult")).toHaveText(`${status}：${message}`);
     await expect(page.getByText("sensitive backend detail")).toHaveCount(0);
   }
 
