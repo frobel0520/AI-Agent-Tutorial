@@ -5,6 +5,8 @@ const frontendRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   root: frontendRoot,
+  // Match the production build (`vite build --base ./`) so assets resolve under /smoke/.
+  base: "./",
   build: {
     rollupOptions: {
       input: {
