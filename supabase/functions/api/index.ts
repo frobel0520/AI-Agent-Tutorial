@@ -980,7 +980,7 @@ async function listEvents(request: Request): Promise<RouteResult> {
 }
 
 async function askDify(request: Request): Promise<RouteResult> {
-  const result = await executeDifyRequest({
+  const { question, data } = await executeDifyRequest({
     accessEnabled: difyAccessEnabled,
     apiKey: requireConfiguration("DIFY_API_KEY"),
     authenticate: () => authenticatedUser(request),
@@ -990,8 +990,6 @@ async function askDify(request: Request): Promise<RouteResult> {
     onAuthorized: (userId) => enforceRateLimit("POST:dify_ask", `user:${userId}`, RATE_LIMIT_DIFY_USER_PER_WINDOW),
     readBody: () => readJsonBody(request),
   });
-  const question = result.question;
-  const data = result.data;
 
   const objectData: JsonObject = data && typeof data === "object" && !Array.isArray(data)
     ? data as JsonObject
