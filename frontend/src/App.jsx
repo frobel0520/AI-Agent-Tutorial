@@ -25,11 +25,27 @@ const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
 const API_ERROR_MESSAGES = {
   401: "登入狀態已失效或缺少登入，請重新登入。",
   403: "你沒有權限執行此操作。",
+  413: "送出的內容太大，請縮短後再試。",
   429: "請求過於頻繁，請稍後再試。",
 };
+const MAX_VALIDATION_DETAIL_LENGTH = 200;
 
-function apiErrorMessage(status) {
+function apiErrorMessage(status, responseText) {
+  if (status === 422) {
+    const detail = validationDetail(responseText);
+    return detail ? `輸入內容不符合要求：${detail}` : "輸入內容不符合要求，請檢查後再試。";
+  }
   return API_ERROR_MESSAGES[status] || "服務目前無法完成請求，請稍後再試。";
+}
+
+// Only 422 details are shown: they describe the caller's own input, not server internals.
+function validationDetail(responseText) {
+  try {
+    const detail = JSON.parse(responseText)?.detail;
+    return typeof detail === "string" && detail.length <= MAX_VALIDATION_DETAIL_LENGTH ? detail : null;
+  } catch {
+    return null;
+  }
 }
 
 function readStoredTheme() {
@@ -497,7 +513,7 @@ function App() {
     });
     const text = await response.text();
     if (!response.ok) {
-      throw new Error(`${response.status}：${apiErrorMessage(response.status)}`);
+      throw new Error(`${response.status}：${apiErrorMessage(response.status, text)}`);
     }
     let data = text;
     try {
