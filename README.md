@@ -2,7 +2,9 @@
 
 Hands-on tutorial project for learning **LangChain**, **RESTful API**, **Dify**, and **WebHooks**.
 
-本機使用 FastAPI + LangChain + SQLite；正式網站使用 GitHub Pages + Supabase Edge Functions + Supabase Database。預設 `LLM_PROVIDER=mock`，**不需要 API Key** 就能開始練 REST 與 RAG 流程。
+本機使用 FastAPI + LangChain + SQLite。預設 `LLM_PROVIDER=mock`，**不需要 API Key** 就能開始練 REST 與 RAG 流程。
+
+> ⚠️ **線上 API 已停用（2026-09-21）**：原本的 Supabase 專案已移除，[GitHub Pages 網站](https://frobel0520.github.io/AI-Agent-Tutorial/)只剩前端畫面，筆記、RAG、WebHook 與 Dify 功能在線上都無法使用。要實際練習請看下方「快速開始（本機）」。Supabase 相關程式與[部署文件](deploy/github-supabase-deploy.md)保留，供日後重建。
 
 ## 學習路徑
 
@@ -95,6 +97,8 @@ pytest -q
 ```
 
 ## 上線部署（GitHub Pages + Supabase）
+
+> 目前**未部署**：Supabase 專案已移除，repository variables 已清空，`Deploy Supabase Edge Function` workflow 已停用。以下是重建時的步驟；重建後重新設定 variables、啟用 workflow，網站的停用提示就會自動消失。
 
 正式環境不使用 Render。架構如下：
 
