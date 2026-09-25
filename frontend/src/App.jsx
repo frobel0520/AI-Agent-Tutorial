@@ -295,6 +295,10 @@ function Sidebar({ activeStepId, sidebarOpen, sidebarHealthLabel, sidebarHealthE
         </nav>
 
         <div className="sidebar-footer">
+          <a className="sidebar-resource" href="https://frobel0520.github.io/learning-atlas/" aria-label="返回 Learning Atlas 學習總入口">
+            <span className="resource-icon" aria-hidden="true">↗</span>
+            <span><strong>Learning Atlas</strong><small>返回學習總入口</small></span>
+          </a>
           <div className={`sidebar-health ${sidebarHealthError ? "is-error" : ""}`.trim()} id="sidebarHealth">
             <span className="sidebar-health-dot" aria-hidden="true" />
             <span><strong>服務狀態</strong><small>{sidebarHealthLabel}</small></span>
