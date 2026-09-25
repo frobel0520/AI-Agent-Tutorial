@@ -14,6 +14,9 @@ const configuredApiBase = String(import.meta.env.VITE_API_BASE_URL || "").trim()
 const isLocalDevelopment = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 const API_BASE = (configuredApiBase || (isLocalDevelopment ? window.location.origin : ""))
   .replace(/\/$/, "");
+// The hosted Supabase backend was retired in 2026-09; a Pages build without an API URL is UI-only.
+const ONLINE_API_RETIRED = !API_BASE;
+const ONLINE_API_RETIRED_MESSAGE = "線上 API 已停用，請在本機啟動 FastAPI 練習。";
 const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL || "").trim();
 const SUPABASE_PUBLISHABLE_KEY = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "").trim();
 const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
@@ -21,6 +24,32 @@ const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
       auth: { autoRefreshToken: true, detectSessionInUrl: true, persistSession: true },
     })
   : null;
+
+const API_ERROR_MESSAGES = {
+  401: "登入狀態已失效或缺少登入，請重新登入。",
+  403: "你沒有權限執行此操作。",
+  413: "送出的內容太大，請縮短後再試。",
+  429: "請求過於頻繁，請稍後再試。",
+};
+const MAX_VALIDATION_DETAIL_LENGTH = 200;
+
+function apiErrorMessage(status, responseText) {
+  if (status === 422) {
+    const detail = validationDetail(responseText);
+    return detail ? `輸入內容不符合要求：${detail}` : "輸入內容不符合要求，請檢查後再試。";
+  }
+  return API_ERROR_MESSAGES[status] || "服務目前無法完成請求，請稍後再試。";
+}
+
+// Only 422 details are shown: they describe the caller's own input, not server internals.
+function validationDetail(responseText) {
+  try {
+    const detail = JSON.parse(responseText)?.detail;
+    return typeof detail === "string" && detail.length <= MAX_VALIDATION_DETAIL_LENGTH ? detail : null;
+  } catch {
+    return null;
+  }
+}
 
 function readStoredTheme() {
   try {
@@ -295,6 +324,13 @@ function Sidebar({ activeStepId, sidebarOpen, sidebarHealthLabel, sidebarHealthE
 }
 
 function ProviderCallout({ health, error }) {
+  if (ONLINE_API_RETIRED) {
+    return (
+      <>
+        <strong>線上 API 已停用</strong>：這個網站無法連到後端。請在本機執行 <code>python src\run.py</code>，再開啟 <code>http://localhost:8000/learn</code> 練習。
+      </>
+    );
+  }
   if (error) {
     return (
       <>
@@ -484,20 +520,20 @@ function App() {
       ...requestOptions,
       headers: {
         "Content-Type": "application/json",
-        ...(await getAuthHeaders()),
         ...optionHeaders,
+        // Prefer the current Supabase session over caller-provided headers.
+        ...(await getAuthHeaders()),
       },
     });
     const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`${response.status}：${apiErrorMessage(response.status, text)}`);
+    }
     let data = text;
     try {
       data = text ? JSON.parse(text) : null;
     } catch {
       data = text;
-    }
-    if (!response.ok) {
-      const detail = typeof data === "object" && data?.detail ? JSON.stringify(data.detail) : text;
-      throw new Error(`${response.status} ${response.statusText}: ${detail || "請稍後再試"}`);
     }
     return data;
   }, [getAuthHeaders]);
@@ -562,6 +598,12 @@ function App() {
   }, [refreshDifyAccess]);
 
   const loadHealth = useCallback(async () => {
+    if (ONLINE_API_RETIRED) {
+      setHealth(null);
+      setHealthError(ONLINE_API_RETIRED_MESSAGE);
+      setConnection({ state: "error", label: "線上 API 已停用" });
+      return null;
+    }
     setConnection({ state: "loading", label: "檢查中…" });
     try {
       const nextHealth = await api("/health");
@@ -593,6 +635,10 @@ function App() {
 
   useEffect(() => {
     let active = true;
+    if (ONLINE_API_RETIRED) {
+      loadHealth();
+      return undefined;
+    }
     loadHealth().then(() => loadNotes().catch((error) => {
       if (active) {
         showBanner(error.message, true);
@@ -817,13 +863,22 @@ function App() {
           <Sidebar
             activeStepId={activeStepId}
             sidebarOpen={sidebarOpen}
-            sidebarHealthLabel={healthError ? "請檢查部署設定" : health ? `${health.llm_provider || "API"} · ${health.storage || "服務正常"}` : "正在檢查 API…"}
+            sidebarHealthLabel={ONLINE_API_RETIRED ? "線上 API 已停用" : healthError ? "請檢查部署設定" : health ? `${health.llm_provider || "API"} · ${health.storage || "服務正常"}` : "正在檢查 API…"}
             sidebarHealthError={Boolean(healthError)}
             onStepClick={handleStepClick}
             onClose={() => setSidebarOpen(false)}
           />
 
           <main className="content" id="mainContent">
+            {ONLINE_API_RETIRED ? (
+              <section className="offline-notice" role="note" aria-label="線上 API 已停用">
+                <strong>線上 API 已停用</strong>
+                <p>
+                  這個網站原本使用的 Supabase 後端已經移除，筆記、RAG、WebHook 與 Dify 功能在線上都無法使用，下方內容保留作為閱讀教材。
+                  要實際練習，請依 <a href="https://github.com/frobel0520/AI-Agent-Tutorial#快速開始本機">README 的快速開始</a> 在本機執行 <code>python src\run.py</code>，再開啟 <code>http://localhost:8000/learn</code>。
+                </p>
+              </section>
+            ) : null}
             <section className="hero">
               <div className="hero-kicker"><span>GET STARTED</span><span className="hero-count">5 個步驟 · 約 10 分鐘</span></div>
               <h1>從這裡開始學 RAG</h1>

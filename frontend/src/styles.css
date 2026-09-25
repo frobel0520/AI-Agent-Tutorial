@@ -471,6 +471,25 @@ a {
   padding: 36px clamp(20px, 4vw, 64px) 80px;
 }
 
+.offline-notice {
+  max-width: 960px;
+  margin: 0 auto 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--warn);
+  border-radius: 12px;
+  background: var(--warn-soft);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.offline-notice strong {
+  color: var(--warn);
+}
+
+.offline-notice p {
+  margin: 6px 0 0;
+}
+
 .hero {
   position: relative;
   overflow: hidden;
@@ -994,6 +1013,44 @@ button:disabled {
 
 .hidden {
   display: none !important;
+}
+
+.app-error-boundary {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-error-boundary-card {
+  width: min(100%, 520px);
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 18px 50px rgba(23, 32, 51, 0.12);
+  text-align: center;
+}
+
+.app-error-boundary-eyebrow {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.app-error-boundary-card h1 {
+  margin: 0 0 12px;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.app-error-boundary-card p:not(.app-error-boundary-eyebrow) {
+  margin: 0 0 24px;
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 @media (max-width: 1120px) {
