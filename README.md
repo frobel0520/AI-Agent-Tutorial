@@ -6,6 +6,8 @@ Hands-on tutorial project for learning **LangChain**, **RESTful API**, **Dify**,
 
 > ⚠️ **線上 API 已停用（2026-09-21）**：原本的 Supabase 專案已移除，[GitHub Pages 網站](https://frobel0520.github.io/AI-Agent-Tutorial/)只剩前端畫面，筆記、RAG、WebHook 與 Dify 功能在線上都無法使用。要實際練習請看下方「快速開始（本機）」。Supabase 相關程式與[部署文件](deploy/github-supabase-deploy.md)保留，供日後重建。
 
+本教材是 [Learning Atlas](https://frobel0520.github.io/learning-atlas/)「AI Agent」路線，網站導覽有返回 Learning Atlas 的連結（2026-09-25 起）。`frontend/index.html` 也載入 Harbor 維護腳本（`data-project="ai-agent-tutorial"`），Harbor 開啟維護模式時顯示維護畫面，連不上時頁面照常顯示。
+
 ## 學習路徑
 
 | Phase | 主題 | 文件 |
@@ -23,7 +25,7 @@ Hands-on tutorial project for learning **LangChain**, **RESTful API**, **Dify**,
 - [System Design / ADR](docs/03-system-design.md)
 - [MVP Release Gate](docs/04-mvp-release-gate.md)
 
-功能開發使用 feature/<task-id>-<slug> 分支，依序經過 dev、main，並以 GitHub Actions 部署 GitHub Pages 與 Supabase Edge Function。
+功能開發使用 feature/<task-id>-<slug> 分支，依序經過 dev、main。GitHub Actions 的 `CI` 與 `Deploy GitHub Pages` 持續運作；`Deploy Supabase Edge Function` 自 2026-09-21 後端退役起停用。
 
 ## 需求
 
