@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@supabase/supabase-js";
 
 const STEP_DEFINITIONS = [
-  { id: "start", number: "0", title: "開始", meta: "先認識操作介面" },
-  { id: "notes", number: "1", title: "建立筆記", meta: "REST · POST /notes" },
-  { id: "rag", number: "2", title: "RAG 問答", meta: "LangChain · POST /ask" },
-  { id: "webhook", number: "3", title: "WebHook 事件", meta: "事件註冊與紀錄" },
-  { id: "dify", number: "4", title: "Dify 問答", meta: "登入後才能呼叫" },
+  { id: "start", number: "00", title: "開始", meta: "先認識操作介面" },
+  { id: "notes", number: "01", title: "建立筆記", meta: "REST · POST /notes" },
+  { id: "rag", number: "02", title: "RAG 問答", meta: "LangChain · POST /ask" },
+  { id: "webhook", number: "03", title: "WebHook 事件", meta: "事件註冊與紀錄" },
+  { id: "dify", number: "04", title: "Dify 問答", meta: "登入後才能呼叫" },
 ];
 
 const OWN_WEBHOOK_PATH = "/hooks/incoming";
@@ -51,18 +51,6 @@ function validationDetail(responseText) {
   }
 }
 
-function readStoredTheme() {
-  try {
-    const storedTheme = window.localStorage.getItem("ai-agent-tutorial-theme");
-    if (storedTheme === "light" || storedTheme === "dark") {
-      return storedTheme;
-    }
-  } catch {
-    // Fall back to the browser preference when storage is unavailable.
-  }
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 function prettyJson(value) {
   return JSON.stringify(value, null, 2);
 }
@@ -72,21 +60,6 @@ function formatEventPayload(payload) {
 }
 
 function Icon({ name }) {
-  if (name === "moon") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M20.2 15.4A8.8 8.8 0 0 1 8.6 3.8 9 9 0 1 0 20.2 15.4Z" />
-      </svg>
-    );
-  }
-  if (name === "sun") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <circle cx="12" cy="12" r="3.5" />
-        <path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6m11 11 1.6 1.6M2 12h2.2m15.6 0H22M4.9 19.1l1.6-1.6m11-11 1.6-1.6" />
-      </svg>
-    );
-  }
   if (name === "logout") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -107,11 +80,9 @@ function AccountMenu({
   authReady,
   authClientConfigured,
   currentUser,
-  theme,
   isOpen,
   isSigningIn,
   onToggle,
-  onThemeToggle,
   onSignIn,
   onSignOut,
 }) {
@@ -168,13 +139,6 @@ function AccountMenu({
             <strong>{currentUser.email || "Google 帳號"}</strong>
           </div>
           <div className="menu-divider" />
-          <button className="menu-item" type="button" role="menuitem" onClick={onThemeToggle}>
-            <span className="menu-item-label">
-              <span className="menu-item-icon"><Icon name={theme === "dark" ? "sun" : "moon"} /></span>
-              <span>切換佈景主題</span>
-            </span>
-            <span className="menu-item-value">{theme === "dark" ? "淺色" : "深色"}</span>
-          </button>
           <button className="menu-item menu-item-danger" type="button" role="menuitem" onClick={onSignOut}>
             <span className="menu-item-label">
               <span className="menu-item-icon"><Icon name="logout" /></span>
@@ -214,7 +178,6 @@ function Topbar({
   connection,
   sidebarOpen,
   authProps,
-  onBrandClick,
   onToggleSidebar,
 }) {
   const connectionClass = [
@@ -226,32 +189,24 @@ function Topbar({
   return (
     <header className="topbar">
       <div className="topbar-inner">
-        <a className="brand" href="#step-start" aria-label="回到新手學習台開始" onClick={onBrandClick}>
-          <span className="brand-mark" aria-hidden="true">
-            <img src="./favicon.svg" alt="" width="32" height="32" />
-          </span>
-          <span className="brand-copy">
-            <span className="brand-eyebrow">AI AGENT TUTORIAL</span>
-            <span className="brand-name">新手學習台</span>
-          </span>
-        </a>
+        <button
+          className="mobile-menu-toggle"
+          type="button"
+          aria-expanded={sidebarOpen}
+          aria-controls="sidebar"
+          onClick={onToggleSidebar}
+        >
+          <span className="menu-icon" aria-hidden="true"><span /><span /><span /></span>
+          <span>選單</span>
+        </button>
 
         <div className="topbar-context" aria-live="polite">
-          <span className="topbar-context-label">目前位置</span>
+          <span className="topbar-context-label">TUTORIAL</span>
+          <i aria-hidden="true">/</i>
           <span className="topbar-context-title">{activeStep.title}</span>
         </div>
 
         <div className="topbar-actions">
-          <button
-            className="mobile-menu-toggle"
-            type="button"
-            aria-expanded={sidebarOpen}
-            aria-controls="sidebar"
-            onClick={onToggleSidebar}
-          >
-            <span className="menu-icon" aria-hidden="true"><span /><span /><span /></span>
-            <span>選單</span>
-          </button>
           <div className={connectionClass} aria-live="polite">
             <span className="connection-dot" aria-hidden="true" />
             <span>{connection.label}</span>
@@ -263,10 +218,18 @@ function Topbar({
   );
 }
 
-function Sidebar({ activeStepId, sidebarOpen, sidebarHealthLabel, sidebarHealthError, onStepClick, onClose }) {
+function Sidebar({ activeStepId, sidebarOpen, sidebarHealthLabel, sidebarHealthError, onStepClick, onBrandClick, onClose }) {
   return (
     <>
       <aside className="sidebar" id="sidebar" aria-label="學習路徑">
+        <a className="brand" href="#step-start" aria-label="回到新手學習台開始" onClick={onBrandClick}>
+          <span className="brand-mark" aria-hidden="true">AI</span>
+          <span className="brand-copy">
+            <span className="brand-name">新手學習台</span>
+            <span className="brand-eyebrow">AI AGENT TUTORIAL</span>
+          </span>
+        </a>
+
         <div className="sidebar-heading">
           <div>
             <span className="sidebar-eyebrow">COURSE MAP</span>
@@ -386,7 +349,6 @@ function NoteCard({ note, source = false }) {
 }
 
 function App() {
-  const [theme, setTheme] = useState(readStoredTheme);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [activeStepId, setActiveStepId] = useState("start");
@@ -428,19 +390,6 @@ function App() {
   const showBanner = useCallback((message, error = false) => {
     setBanner({ message, error });
   }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute(
-      "content",
-      theme === "dark" ? "#111827" : "#f6f4ef",
-    );
-    try {
-      window.localStorage.setItem("ai-agent-tutorial-theme", theme);
-    } catch {
-      // The theme still applies for the current session when storage is blocked.
-    }
-  }, [theme]);
 
   useEffect(() => {
     document.body.classList.toggle("sidebar-open", sidebarOpen);
@@ -834,11 +783,9 @@ function App() {
     authReady,
     authClientConfigured: Boolean(authClient),
     currentUser,
-    theme,
     isOpen: accountOpen,
     isSigningIn,
     onToggle: () => setAccountOpen((open) => !open),
-    onThemeToggle: () => setTheme((value) => value === "dark" ? "light" : "dark"),
     onSignIn: handleSignIn,
     onSignOut: handleSignOut,
   };
@@ -855,7 +802,6 @@ function App() {
           connection={connection}
           sidebarOpen={sidebarOpen}
           authProps={authProps}
-          onBrandClick={handleBrandClick}
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
         />
 
@@ -866,6 +812,7 @@ function App() {
             sidebarHealthLabel={ONLINE_API_RETIRED ? "線上 API 已停用" : healthError ? "請檢查部署設定" : health ? `${health.llm_provider || "API"} · ${health.storage || "服務正常"}` : "正在檢查 API…"}
             sidebarHealthError={Boolean(healthError)}
             onStepClick={handleStepClick}
+            onBrandClick={handleBrandClick}
             onClose={() => setSidebarOpen(false)}
           />
 
@@ -880,13 +827,26 @@ function App() {
               </section>
             ) : null}
             <section className="hero">
-              <div className="hero-kicker"><span>GET STARTED</span><span className="hero-count">5 個步驟 · 約 10 分鐘</span></div>
-              <h1>從這裡開始學 RAG</h1>
-              <p>
-                你<strong>不需要先會寫程式</strong>。這個頁面會帶你一步一步操作：先建立筆記，再問問題，最後看 LLM
-                如何根據筆記回答。左側會告訴你現在在哪一步，以及按下按鈕後會發生什麼。
-              </p>
-              <div className="callout info" id="providerCallout"><ProviderCallout health={health} error={healthError} /></div>
+              <div className="hero-copy">
+                <div className="hero-kicker"><span>GET STARTED</span><span className="hero-count">5 個步驟 · 約 10 分鐘</span></div>
+                <h1>從這裡開始學 RAG</h1>
+                <p>
+                  你<strong>不需要先會寫程式</strong>。這個頁面會帶你一步一步操作：先建立筆記，再問問題，最後看 LLM
+                  如何根據筆記回答。左側會告訴你現在在哪一步，以及按下按鈕後會發生什麼。
+                </p>
+                <div className="callout info" id="providerCallout"><ProviderCallout health={health} error={healthError} /></div>
+              </div>
+              <div className="hero-visual" aria-hidden="true">
+                <span className="visual-label">CURRENT ROUTE</span>
+                <span className="visual-title">RAG</span>
+                <ol className="visual-flow">
+                  <li>問題</li>
+                  <li>檢索</li>
+                  <li>LLM</li>
+                  <li>答案</li>
+                </ol>
+                <span className="visual-footer"><span>05 STEPS</span><b>READY</b></span>
+              </div>
             </section>
 
             <section className="panel" id="step-start" ref={(node) => { sectionRefs.current.start = node; }}>
