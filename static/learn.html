@@ -5,7 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI-Agent-Tutorial | 新手學習台</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="stylesheet" href="./static/css/learn.css?v=20260901-ui" />
+    <meta name="theme-color" content="#f1ecde" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;500;600;700;900&display=swap"
+    />
+    <link rel="stylesheet" href="./static/css/learn.css?v=20260930-sew" />
   </head>
   <body>
     <div id="statusBanner" class="status-banner hidden"></div>
@@ -13,18 +20,9 @@
     <div class="layout">
       <header class="topbar">
         <div class="topbar-inner">
-          <a class="brand" href="#step-start" aria-label="回到新手學習台開始">
-            <span class="brand-mark" aria-hidden="true">
-              <img src="./favicon.svg" alt="" width="32" height="32" />
-            </span>
-            <span class="brand-copy">
-              <span class="brand-eyebrow">AI AGENT TUTORIAL</span>
-              <span class="brand-name">新手學習台</span>
-            </span>
-          </a>
-
           <div class="topbar-context" aria-live="polite">
-            <span class="topbar-context-label">目前位置</span>
+            <span class="topbar-context-label">TUTORIAL</span>
+            <i aria-hidden="true">/</i>
             <span class="topbar-context-title" id="activeSectionLabel">開始</span>
           </div>
 
@@ -58,6 +56,14 @@
 
       <div class="app-frame">
         <aside class="sidebar" id="sidebar" aria-label="學習路徑">
+          <a class="brand" href="#step-start" aria-label="回到新手學習台開始">
+            <span class="brand-mark" aria-hidden="true">AI</span>
+            <span class="brand-copy">
+              <span class="brand-name">新手學習台</span>
+              <span class="brand-eyebrow">AI AGENT TUTORIAL</span>
+            </span>
+          </a>
+
           <div class="sidebar-heading">
             <div>
               <span class="sidebar-eyebrow">COURSE MAP</span>
@@ -68,23 +74,23 @@
 
           <nav class="steps-nav" aria-label="教學步驟">
             <a class="step-link active" href="#step-start" data-step="start" aria-current="step">
-              <span class="step-marker"><span class="num">0</span></span>
+              <span class="step-marker"><span class="num">00</span></span>
               <span class="step-copy"><span class="step-title">開始</span><span class="step-meta">先認識操作介面</span></span>
             </a>
             <a class="step-link" href="#step-notes" data-step="notes">
-              <span class="step-marker"><span class="num">1</span></span>
+              <span class="step-marker"><span class="num">01</span></span>
               <span class="step-copy"><span class="step-title">建立筆記</span><span class="step-meta">REST · POST /notes</span></span>
             </a>
             <a class="step-link" href="#step-rag" data-step="rag">
-              <span class="step-marker"><span class="num">2</span></span>
+              <span class="step-marker"><span class="num">02</span></span>
               <span class="step-copy"><span class="step-title">RAG 問答</span><span class="step-meta">LangChain · POST /ask</span></span>
             </a>
             <a class="step-link" href="#step-webhook" data-step="webhook">
-              <span class="step-marker"><span class="num">3</span></span>
+              <span class="step-marker"><span class="num">03</span></span>
               <span class="step-copy"><span class="step-title">WebHook 事件</span><span class="step-meta">事件註冊與紀錄</span></span>
             </a>
             <a class="step-link" href="#step-dify" data-step="dify">
-              <span class="step-marker"><span class="num">4</span></span>
+              <span class="step-marker"><span class="num">04</span></span>
               <span class="step-copy"><span class="step-title">Dify 問答</span><span class="step-meta">登入後才能呼叫</span></span>
             </a>
           </nav>
@@ -110,14 +116,27 @@
 
         <main class="content" id="mainContent">
           <section class="hero">
-            <div class="hero-kicker"><span>GET STARTED</span><span class="hero-count">5 個步驟 · 約 10 分鐘</span></div>
-            <h1>從這裡開始學 RAG</h1>
-            <p>
-              你<strong>不需要先會寫程式</strong>。這個頁面會帶你一步一步操作：先建立筆記，再問問題，最後看 LLM
-              如何根據筆記回答。左側會告訴你現在在哪一步，以及按下按鈕後會發生什麼。
-            </p>
-            <div class="callout info" id="providerCallout">
-              正在連線到後端 API…
+            <div class="hero-copy">
+              <div class="hero-kicker"><span>GET STARTED</span><span class="hero-count">5 個步驟 · 約 10 分鐘</span></div>
+              <h1>從這裡開始學 RAG</h1>
+              <p>
+                你<strong>不需要先會寫程式</strong>。這個頁面會帶你一步一步操作：先建立筆記，再問問題，最後看 LLM
+                如何根據筆記回答。左側會告訴你現在在哪一步，以及按下按鈕後會發生什麼。
+              </p>
+              <div class="callout info" id="providerCallout">
+                正在連線到後端 API…
+              </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+              <span class="visual-label">CURRENT ROUTE</span>
+              <span class="visual-title">RAG</span>
+              <ol class="visual-flow">
+                <li>問題</li>
+                <li>檢索</li>
+                <li>LLM</li>
+                <li>答案</li>
+              </ol>
+              <span class="visual-footer"><span>05 STEPS</span><b>READY</b></span>
             </div>
           </section>
 
