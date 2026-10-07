@@ -27,8 +27,8 @@ DIFY_API_KEY=app-xxxxxxxx
 你已具備 Docker Desktop，建議用官方 docker 目錄：
 
 ```powershell
-git clone https://github.com/langgenius/dify.git C:\Users\ytwei\Projects\dify
-cd C:\Users\ytwei\Projects\dify\docker
+git clone https://github.com/langgenius/dify.git $HOME\Projects\dify
+cd $HOME\Projects\dify\docker
 copy .env.example .env
 docker compose up -d
 ```

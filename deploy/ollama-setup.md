@@ -16,7 +16,7 @@ Supabase Edge Function 無法連到你電腦的 Ollama；正式環境請使用 `
 ### 2. 只啟動 Ollama 容器
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+cd $HOME\Projects\AI-Agent-Tutorial
 docker compose up -d ollama
 ```
 
@@ -60,7 +60,7 @@ python src\run.py
 ## 方案 B：Docker Compose 一次跑 API + Ollama
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+cd $HOME\Projects\AI-Agent-Tutorial
 copy .env.example .env
 # 編輯 .env：DATABASE_URL 可填 Supabase URI
 

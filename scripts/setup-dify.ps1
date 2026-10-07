@@ -1,7 +1,7 @@
 # Clone official Dify docker stack and start containers (Phase 3).
 $ErrorActionPreference = "Stop"
 
-$DifyRoot = "C:\Users\ytwei\Projects\dify"
+$DifyRoot = "$HOME\Projects\dify"
 $DifyDocker = Join-Path $DifyRoot "docker"
 
 Write-Host "==> Checking Docker..."
