@@ -22,7 +22,7 @@
 | 決策 | 內容 |
 |------|------|
 | 架構 | 方案 A；mock LLM 先通流程，Ollama/Dify 分 Phase |
-| 專案路徑 | `C:\Users\ytwei\Projects\AI-Agent-Tutorial` |
+| 專案路徑 | `$HOME\Projects\AI-Agent-Tutorial` |
 | 部署 | Render Blueprint + GitHub |
 | 語言 | 對鮪魚繁體中文；程式註解英文 |
 

@@ -128,7 +128,7 @@ Repository 已包含：
 本機只想預覽 React 前端時：
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial\frontend
+cd $HOME\Projects\AI-Agent-Tutorial\frontend
 npm ci
 npm run dev
 ```
