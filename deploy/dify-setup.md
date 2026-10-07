@@ -16,13 +16,13 @@ Dify 跑在**獨立 Docker stack**（不併入主 repo 的 `docker-compose.yml`�
 ## 一鍵安裝（Windows）
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+cd $HOME\Projects\AI-Agent-Tutorial
 .\scripts\setup-dify.ps1
 ```
 
 腳本會：
 
-1. Clone `https://github.com/langgenius/dify.git` 到 `C:\Users\ytwei\Projects\dify`
+1. Clone `https://github.com/langgenius/dify.git` 到 `$HOME\Projects\dify`
 2. 複製 `docker/.env.example` → `docker/.env`
 3. 執行 `docker compose up -d`
 
@@ -31,8 +31,8 @@ cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
 ## 手動安裝
 
 ```powershell
-git clone https://github.com/langgenius/dify.git C:\Users\ytwei\Projects\dify
-cd C:\Users\ytwei\Projects\dify\docker
+git clone https://github.com/langgenius/dify.git $HOME\Projects\dify
+cd $HOME\Projects\dify\docker
 copy .env.example .env
 docker compose up -d
 ```
@@ -104,7 +104,7 @@ DIFY_API_KEY=app-xxxxxxxx
 重啟 API：
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+cd $HOME\Projects\AI-Agent-Tutorial
 .\.venv\Scripts\Activate.ps1
 python src\run.py
 ```
@@ -161,7 +161,7 @@ http://localhost:8000/learn → **Step 4 · Dify 問答**
 ## 停止 / 重啟 Dify
 
 ```powershell
-cd C:\Users\ytwei\Projects\dify\docker
+cd $HOME\Projects\dify\docker
 docker compose down      # 停止
 docker compose up -d     # 重啟
 ```
