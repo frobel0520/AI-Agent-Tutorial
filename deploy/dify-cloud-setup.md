@@ -31,7 +31,7 @@ flowchart LR
 **方式 A：腳本**
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+cd $HOME\Projects\AI-Agent-Tutorial
 .\scripts\setup-dify-tunnel.ps1
 ```
 
