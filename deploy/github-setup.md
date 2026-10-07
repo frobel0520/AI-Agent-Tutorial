@@ -4,7 +4,7 @@
 
 - Git：`2.53.0` ✓
 - GitHub CLI (`gh`)：`2.92.0` ✓
-- Git 使用者：`ytwei` / `frobel0520@gmail.com` ✓
+- Git 使用者：已設定 user.name / user.email ✓
 - **尚未登入 GitHub CLI** ← 目前唯一卡關點
 
 ---
@@ -48,7 +48,7 @@ gh auth status
 專案已有 initial commit，在專案目錄執行：
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+cd $HOME\Projects\AI-Agent-Tutorial
 
 gh repo create AI-Agent-Tutorial --public --source=. --remote=origin --push
 ```
@@ -81,7 +81,7 @@ git push -u origin main
 Push 時：
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+cd $HOME\Projects\AI-Agent-Tutorial
 git remote add origin https://github.com/ytwei/AI-Agent-Tutorial.git
 git branch -M main
 git push -u origin main

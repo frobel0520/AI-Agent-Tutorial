@@ -2,7 +2,7 @@
 
 > 給新 Chat 用：請先讀本檔。溝通語言一律繁體中文。
 
-**專案路徑：** `C:\Users\ytwei\Projects\AI-Agent-Tutorial`  
+**專案路徑：** `$HOME\Projects\AI-Agent-Tutorial`  
 **GitHub：** `frobel0520/AI-Agent-Tutorial`  
 **正式架構：** GitHub Pages（線上 API 已停用，見下方「目前狀態」）
 **本機架構：** FastAPI + SQLite/ Supabase + LangChain + Ollama
@@ -109,7 +109,7 @@ SUPABASE_ACCESS_TOKEN=<Supabase personal access token>
 ## 常用指令
 
 ```powershell
-cd C:\Users\ytwei\Projects\AI-Agent-Tutorial
+cd $HOME\Projects\AI-Agent-Tutorial
 .\.venv\Scripts\Activate.ps1
 pytest -q
 python src\run.py
@@ -125,7 +125,7 @@ supabase functions deploy api
 ## 新對話開場白
 
 ```text
-專案：C:\Users\ytwei\Projects\AI-Agent-Tutorial
+專案：$HOME\Projects\AI-Agent-Tutorial
 請先讀 @deploy/PROGRESS.md，使用繁體中文。
 
 線上後端（Supabase）已於 2026-09-21 退役，GitHub Pages 只顯示停用說明；Render 已移除。本機仍保留 FastAPI、Docker、Ollama、Dify 教學。
