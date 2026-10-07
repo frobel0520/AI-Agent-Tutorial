@@ -11,8 +11,8 @@ Official docs: https://docs.dify.ai/getting-started/install-self-hosted/local-so
 Or manually:
 
 ```powershell
-git clone https://github.com/langgenius/dify.git C:\Users\ytwei\Projects\dify
-cd C:\Users\ytwei\Projects\dify\docker
+git clone https://github.com/langgenius/dify.git $HOME\Projects\dify
+cd $HOME\Projects\dify\docker
 copy .env.example .env
 docker compose up -d
 ```
