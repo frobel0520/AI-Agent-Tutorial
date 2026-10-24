@@ -2,7 +2,7 @@
 
 日期：2026-10-25。基準：4e48de1da3ae00be475e8fc18ccf006b797be8a8（dev）。
 
-狀態：部分修補；Chroma無修補版待決定。未推送／合併／部署；原始工作目錄保留。
+狀態：前端已修補；後端不用、退役另議。未推送／合併／部署；原始工作目錄保留。
 
 Vite 7.3.7、Playwright 1.64.1、Supabase 2.50.0（auth-js 2.70.0）；公開 npm 公告歸零。Python 132 個解析版本加約束，Chroma 另列未解決。
 
@@ -13,7 +13,7 @@ Vite 7.3.7、Playwright 1.64.1、Supabase 2.50.0（auth-js 2.70.0）；公開 np
 npm公告：{"info":0,"low":0,"moderate":0,"high":0,"critical":0,"total":0}。
 Python公告：4個獨立命中／132個解析版本。
 
-Chroma1.5.9有4個獨立公告（2critical／2high），官方目前無修補版。嵌入模式且受測FastAPI管理路由404，不能外推所有啟動方式安全；不得啟動Chroma server。需決定更換向量儲存或停用後端，尚未實作架構變更。
+Chroma1.5.9有4個獨立公告（2critical／2high），官方目前無修補版。嵌入模式且受測FastAPI管理路由404，不能外推所有啟動方式安全。使用者已表示此後端不用、退役另議；不再進行儲存架構遷移，未封存或刪除，也不將4個公告標為已修復。
 
 效能：{"beforeGzipBytes":89026,"afterGzipBytes":92037,"growth":0.033821580212522184,"thresholdGrowth":0.05,"result":"pass","scope":"Local gzip bundle size, not production latency"}。
 
