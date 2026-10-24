@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/src
 
 COPY requirements.txt .
+COPY constraints-security.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src

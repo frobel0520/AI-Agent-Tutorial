@@ -1,0 +1,95 @@
+{
+  "taskId": "SEC-P2-20261025",
+  "date": "2026-10-25",
+  "name": "AI-Agent-Tutorial",
+  "baseCommit": "4e48de1da3ae00be475e8fc18ccf006b797be8a8",
+  "baseBranch": "dev",
+  "branch": "feature/sec-p2-20261025",
+  "state": "部分修補；Chroma無修補版待決定",
+  "change": "Vite 7.3.7、Playwright 1.64.1、Supabase 2.50.0（auth-js 2.70.0）；公開 npm 公告歸零。Python 132 個解析版本加約束，Chroma 另列未解決。",
+  "checks": [
+    "Python mock／SQLite／嵌入 Chroma 7 tests",
+    "既有瀏覽器互動與錯誤處理 5 tests",
+    "Chroma 管理路由 GET／POST／PATCH 均404，僅證明此 API 未暴露該路由"
+  ],
+  "counts": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "python": {
+    "resolvedPackages": 132,
+    "uniqueFindings": [
+      {
+        "package": "chromadb",
+        "version": "1.5.9",
+        "id": "PYSEC-2026-311",
+        "aliases": [
+          "CVE-2026-45829",
+          "GHSA-f4j7-r4q5-qw2c"
+        ],
+        "fixVersions": [],
+        "severity": "critical"
+      },
+      {
+        "package": "chromadb",
+        "version": "1.5.9",
+        "id": "PYSEC-2026-3814",
+        "aliases": [
+          "GHSA-36p7-vc44-83pf",
+          "CVE-2026-45833"
+        ],
+        "fixVersions": [],
+        "severity": "critical"
+      },
+      {
+        "package": "chromadb",
+        "version": "1.5.9",
+        "id": "PYSEC-2026-3815",
+        "aliases": [
+          "CVE-2026-45831",
+          "GHSA-xph7-9rjv-w5fr"
+        ],
+        "fixVersions": [],
+        "severity": "high"
+      },
+      {
+        "package": "chromadb",
+        "version": "1.5.9",
+        "id": "PYSEC-2026-3813",
+        "aliases": [
+          "GHSA-2wm9-hf6c-p5cr",
+          "CVE-2026-45830"
+        ],
+        "fixVersions": [],
+        "severity": "high"
+      }
+    ]
+  },
+  "securityGate": "finding",
+  "performance": {
+    "beforeGzipBytes": 89026,
+    "afterGzipBytes": 92037,
+    "growth": 0.033821580212522184,
+    "thresholdGrowth": 0.05,
+    "result": "pass",
+    "scope": "Local gzip bundle size, not production latency"
+  },
+  "validation": "Vite 7.3.7、Playwright 1.64.1、Supabase 2.50.0（auth-js 2.70.0）；公開 npm 公告歸零。Python 132 個解析版本加約束，Chroma 另列未解決。 Python mock／SQLite／嵌入 Chroma 7 tests；既有瀏覽器互動與錯誤處理 5 tests；Chroma 管理路由 GET／POST／PATCH 均404，僅證明此 API 未暴露該路由",
+  "integrationNeeded": true,
+  "pushed": false,
+  "deployed": false,
+  "merged": false,
+  "noreplyIdentityVerified": true,
+  "actionPins": 12,
+  "monthlyCost": "Local checks only. No paid APIs, cloud data writes, new recurring services, remote CI, merge or deployment.",
+  "limitations": [
+    "原始工作目錄、未提交修改與分支全部保留；本報告僅適用此隔離分支。",
+    "完整history／秘密輪替／正式服務與二進位鑑識不在此輪驗收，未評項目not_scored。"
+  ],
+  "currentPriority": "P1",
+  "unresolved": "Chroma1.5.9有4個獨立公告（2critical／2high），官方目前無修補版。嵌入模式且受測FastAPI管理路由404，不能外推所有啟動方式安全；不得啟動Chroma server。需決定更換向量儲存或停用後端，尚未實作架構變更。"
+}
