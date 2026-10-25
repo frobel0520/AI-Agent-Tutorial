@@ -61,6 +61,10 @@ flowchart LR
 
 ## 5. ADR
 
+### ADR-006：本機 RAG 安全替換（2026-10-25 已核准）
+
+Chroma 改為 LangChain Core 記憶體索引，由既有 SQLite 筆記於每次查詢重建，保留舊索引目錄。契約、代價、量測前效能門檻與驗收見 [ADR-006](adr-006-memory-index-security.md)。正式雲端 API 不因本次本機改動而重啟。
+
 ### ADR-001：正式前端使用 GitHub Pages + Supabase
 
 - 狀態：accepted

@@ -12,7 +12,6 @@ from app.config import Settings, get_settings
 from app.database import Note, SessionLocal, init_db
 from app.routers import ask, notes, webhooks
 from app.schemas import HealthResponse
-from app.services.langchain_rag import RagService, rebuild_chroma_index
 from app.services.ollama_health import check_ollama_ready
 
 logger = logging.getLogger(__name__)
@@ -28,8 +27,7 @@ def seed_notes(settings: Settings) -> None:
     try:
         existing_notes = db.query(Note).order_by(Note.id.asc()).all()
         if existing_notes:
-            rebuilt = rebuild_chroma_index(settings, existing_notes)
-            logger.info("Restored Chroma index from %s notes", rebuilt)
+            logger.info("Persisted notes ready; memory retrieval index is rebuilt per request")
             _seed_done = True
             return
         samples = [
@@ -48,10 +46,6 @@ def seed_notes(settings: Settings) -> None:
         ]
         db.add_all(samples)
         db.commit()
-        rag = RagService(settings)
-        for note in samples:
-            db.refresh(note)
-            rag.sync_note(note)
         _seed_done = True
         logger.info("Seed notes completed")
     finally:
@@ -70,7 +64,6 @@ async def seed_notes_background(settings: Settings) -> None:
 async def lifespan(app: FastAPI):
     settings = get_settings()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
-    settings.chroma_path.mkdir(parents=True, exist_ok=True)
     init_db()
     if settings.app_env == "production":
         seed_task = asyncio.create_task(seed_notes_background(settings))

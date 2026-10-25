@@ -1,7 +1,7 @@
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_community.embeddings import FakeEmbeddings
+from langchain_core.embeddings import DeterministicFakeEmbedding
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -51,8 +51,8 @@ def build_embeddings(settings: Settings) -> Embeddings:
             base_url=settings.ollama_base_url,
             model=settings.ollama_model,
         )
-    # groq has no embeddings API; falls through to FakeEmbeddings like mock.
-    return FakeEmbeddings(size=384)
+    # Synthetic vectors keep mock lessons repeatable; this is not semantic search.
+    return DeterministicFakeEmbedding(size=384)
 
 
 def build_chat_model(settings: Settings) -> BaseChatModel:

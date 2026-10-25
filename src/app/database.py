@@ -61,7 +61,6 @@ class WebhookDelivery(Base):
 def _create_engine():
     settings = get_settings()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
-    settings.chroma_path.mkdir(parents=True, exist_ok=True)
 
     connect_args: dict = {}
     engine_kwargs: dict = {"pool_pre_ping": True}
