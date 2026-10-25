@@ -1,0 +1,108 @@
+{
+  "taskId": "SEC-P2-20261025",
+  "date": "2026-10-25",
+  "name": "AI-Agent-Tutorial",
+  "baseCommit": "4e48de1da3ae00be475e8fc18ccf006b797be8a8",
+  "baseBranch": "dev",
+  "branch": "feature/sec-p2-20261025",
+  "state": "前端已修補；後端不用、退役另議",
+  "change": "Vite 7.3.7、Playwright 1.64.1、Supabase 2.50.0（auth-js 2.70.0）；公開 npm 公告歸零。Python 132 個解析版本加約束，Chroma 另列未解決。 使用者另核准以LangChain Core記憶體索引替換Chroma，SQLite筆記每次問答重建，舊目錄不讀寫；乾淨安裝70依賴無Chroma且公告0。",
+  "checks": [
+    "Python mock／SQLite／嵌入 Chroma 7 tests",
+    "既有瀏覽器互動與錯誤處理 5 tests",
+    "Chroma 管理路由 GET／POST／PATCH 均404，僅證明此 API 未暴露該路由",
+    "乾淨Python環境9個API／檢索／資料保留測試通過；pip check成功，無chromadb／langchain_chroma；70個解析版本公告0"
+  ],
+  "counts": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "python": {
+    "resolvedPackages": 70,
+    "uniqueFindings": []
+  },
+  "securityGate": "passed_within_checked_scope",
+  "performance": {
+    "beforeGzipBytes": 89026,
+    "afterGzipBytes": 92037,
+    "growth": 0.033821580212522184,
+    "thresholdGrowth": 0.05,
+    "result": "pass",
+    "scope": "Local gzip bundle size, not production latency"
+  },
+  "validation": "Vite 7.3.7、Playwright 1.64.1、Supabase 2.50.0（auth-js 2.70.0）；公開 npm 公告歸零。Python 132 個解析版本加約束，Chroma 另列未解決。 使用者另核准以LangChain Core記憶體索引替換Chroma，SQLite筆記每次問答重建，舊目錄不讀寫；乾淨安裝70依賴無Chroma且公告0。 Python mock／SQLite／嵌入 Chroma 7 tests；既有瀏覽器互動與錯誤處理 5 tests；Chroma 管理路由 GET／POST／PATCH 均404，僅證明此 API 未暴露該路由；乾淨Python環境9個API／檢索／資料保留測試通過；pip check成功，無chromadb／langchain_chroma；70個解析版本公告0",
+  "integrationNeeded": true,
+  "pushed": false,
+  "deployed": false,
+  "merged": false,
+  "noreplyIdentityVerified": true,
+  "actionPins": 12,
+  "monthlyCost": "Local checks only. No paid APIs, cloud data writes, new recurring services, remote CI, merge or deployment.",
+  "limitations": [
+    "原始工作目錄、未提交修改與分支全部保留；本報告僅適用此隔離分支。",
+    "完整history／秘密輪替／正式服務與二進位鑑識不在此輪驗收，未評項目not_scored。"
+  ],
+  "backendDisposition": "owner_reports_unused_retirement_discussion_deferred",
+  "previousChromaFinding": {
+    "uniqueAdvisories": 4,
+    "critical": 2,
+    "high": 2,
+    "resolution": "Removed chromadb and langchain-chroma from application and clean resolved installation; old data untouched. Upstream is not claimed patched."
+  },
+  "memoryIndexPerformance": {
+    "python": "3.12.14",
+    "platform": "win32",
+    "provider": "mock",
+    "scope": "Synthetic SQLite read + 384-dimension indexing/retrieval + mock answer; no real model/API or private notes; not production latency",
+    "hardware": "Same local hardware for before/after; one sequential process; caches not reset",
+    "results": [
+      {
+        "notes": 100,
+        "dimensions": 384,
+        "warmups": 2,
+        "before": {
+          "samples": 20,
+          "p50_ms": 4.040600033476949,
+          "p95_ms": 5.874699912965298,
+          "max_ms": 5.995699902996421
+        },
+        "after": {
+          "samples": 20,
+          "p50_ms": 5.558300064876676,
+          "p95_ms": 6.526299985125661,
+          "max_ms": 6.537000183016062
+        },
+        "oldColdMs": 1122.9018000885844,
+        "newColdMs": 3.1626999843865633,
+        "thresholdP95Ms": 500,
+        "passed": true
+      },
+      {
+        "notes": 1000,
+        "dimensions": 384,
+        "warmups": 2,
+        "before": {
+          "samples": 20,
+          "p50_ms": 3.9190499810501933,
+          "p95_ms": 4.705999977886677,
+          "max_ms": 4.766700090840459
+        },
+        "after": {
+          "samples": 20,
+          "p50_ms": 45.8348001120612,
+          "p95_ms": 61.27510010264814,
+          "max_ms": 63.714199932292104
+        },
+        "oldColdMs": 10150.682199979201,
+        "newColdMs": 28.562499908730388,
+        "thresholdP95Ms": 2000,
+        "passed": true
+      }
+    ]
+  },
+  "modelQuality": "Synthetic topic embedding retrieval contract checked; real model semantic retrieval and answer scoring not_scored"
+}
