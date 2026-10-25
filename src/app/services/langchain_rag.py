@@ -1,7 +1,8 @@
-from langchain_chroma import Chroma
+from langchain_core.embeddings import Embeddings
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from sqlalchemy.orm import Session
 
@@ -11,51 +12,24 @@ from app.schemas import AskResponse, NoteRead
 from app.services.llm_factory import build_chat_model, build_embeddings
 
 
-def chroma_collection_name(settings: Settings) -> str:
-    # Separate collections per LLM provider because embedding dimensions differ
-    # (mock=384, gemini=3072, ollama=3072, openai=1536, groq=384 fake).
-    return f"tutorial_notes_{settings.llm_provider.lower()}"
-
-
 class RagService:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        embeddings: Embeddings | None = None,
+        chat_model: BaseChatModel | None = None,
+    ) -> None:
         self.settings = settings
-        self.embeddings = build_embeddings(settings)
-        self.chat_model = build_chat_model(settings)
-        self.vector_store = Chroma(
-            collection_name=chroma_collection_name(settings),
-            embedding_function=self.embeddings,
-            persist_directory=str(settings.chroma_path),
-        )
-
-    def _reset_collection(self) -> None:
-        existing = self.vector_store.get()
-        if existing and existing.get("ids"):
-            self.vector_store.delete(ids=existing["ids"])
-
-    def sync_note(self, note: Note) -> None:
-        document = Document(
-            page_content=note.content,
-            metadata={"note_id": note.id, "title": note.title},
-        )
-        existing = self.vector_store.get(where={"note_id": note.id})
-        if existing and existing.get("ids"):
-            self.vector_store.delete(ids=existing["ids"])
-        try:
-            self.vector_store.add_documents([document], ids=[f"note-{note.id}"])
-        except Exception as exc:
-            if "dimension" not in str(exc).lower():
-                raise
-            self._reset_collection()
-            self.vector_store.add_documents([document], ids=[f"note-{note.id}"])
-
-    def remove_note(self, note_id: int) -> None:
-        existing = self.vector_store.get(where={"note_id": note_id})
-        if existing and existing.get("ids"):
-            self.vector_store.delete(ids=existing["ids"])
+        self.embeddings = embeddings if embeddings is not None else build_embeddings(settings)
+        self.chat_model = chat_model if chat_model is not None else build_chat_model(settings)
+        self.vector_store = InMemoryVectorStore(self.embeddings)
 
     def ask(self, db: Session, question: str, top_k: int) -> AskResponse:
-        retriever = self.vector_store.as_retriever(search_kwargs={"k": top_k})
+        # Each request reconstructs its local index from the durable SQLite
+        # notes, so updates/deletions and restarts cannot leave stale vectors.
+        self.rebuild_from_notes(db.query(Note).order_by(Note.id.asc()).all())
+        source_docs = self.vector_store.similarity_search(question, k=top_k)
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
@@ -74,15 +48,8 @@ class RagService:
                 chunks.append(f"[{title}] {doc.page_content}")
             return "\n\n".join(chunks) if chunks else "No notes yet."
 
-        chain = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | prompt
-            | self.chat_model
-            | StrOutputParser()
-        )
-        answer = chain.invoke(question)
-
-        source_docs = retriever.invoke(question)
+        chain = prompt | self.chat_model | StrOutputParser()
+        answer = chain.invoke({"context": format_docs(source_docs), "question": question})
         note_ids = []
         for doc in source_docs:
             note_id = doc.metadata.get("note_id")
@@ -92,7 +59,12 @@ class RagService:
         sources: list[NoteRead] = []
         if note_ids:
             notes = db.query(Note).filter(Note.id.in_(note_ids)).all()
-            sources = [NoteRead.model_validate(note) for note in notes]
+            by_id = {note.id: note for note in notes}
+            sources = [
+                NoteRead.model_validate(by_id[note_id])
+                for note_id in note_ids
+                if note_id in by_id
+            ]
 
         return AskResponse(
             question=question,
@@ -102,12 +74,16 @@ class RagService:
         )
 
     def rebuild_from_notes(self, notes: list[Note]) -> int:
-        """Rebuild the local Chroma index from persisted notes."""
-        for note in notes:
-            self.sync_note(note)
+        """Replace the disposable memory index without touching old disk indexes."""
+        replacement = InMemoryVectorStore(self.embeddings)
+        if notes:
+            documents = [
+                Document(
+                    page_content=note.content,
+                    metadata={"note_id": note.id, "title": note.title},
+                )
+                for note in notes
+            ]
+            replacement.add_documents(documents, ids=[f"note-{note.id}" for note in notes])
+        self.vector_store = replacement
         return len(notes)
-
-
-def rebuild_chroma_index(settings: Settings, notes: list[Note]) -> int:
-    rag = RagService(settings)
-    return rag.rebuild_from_notes(notes)

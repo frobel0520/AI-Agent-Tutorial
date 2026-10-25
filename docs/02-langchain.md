@@ -5,14 +5,20 @@
 流程：
 
 1. 筆記寫入 SQLite
-2. `RagService.sync_note()` 把內容切成 Document 存入 Chroma
-3. `POST /ask` 用 Retriever 找 top-k 片段
+2. `POST /ask` 從 SQLite 筆記重建 LangChain Core 的 `InMemoryVectorStore`
+3. 在該次查詢的記憶體索引找 top-k 片段，同一批片段供 prompt 與 sources 使用
 4. Prompt + Chat Model 產生答案
 
 對應程式：
 
 - `src/app/services/langchain_rag.py`
 - `src/app/services/llm_factory.py`
+
+### 本機索引與資料保留（2026-10-25）
+
+Chroma 及其整合套件已移除。SQLite 是筆記唯一持久資料來源，新增／更新／刪除只寫 SQLite；每次問答重建索引，因此重啟、更新與刪除後不會讀到舊向量。舊 `CHROMA_DIR` 設定仍可解析，但不讀寫或清除該目錄，不需搬移既有筆記。
+
+代價是每次問答都要為現有筆記產生向量，適合小型本機教學，不能直接外推大量資料或遠端模型延遲。預設 mock 使用固定的合成向量，方便重現；不是語意檢索或答案品質證明。實際模型與資料集品質另驗，測試不呼叫付費服務。
 
 ## LLM 模式
 

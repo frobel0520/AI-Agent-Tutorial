@@ -14,7 +14,7 @@ COPY src ./src
 COPY docs ./docs
 COPY static ./static
 
-RUN mkdir -p /app/data /app/data/chroma
+RUN mkdir -p /app/data
 
 EXPOSE 8000
 
