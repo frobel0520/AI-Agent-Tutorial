@@ -50,9 +50,8 @@ def test_health(client: TestClient) -> None:
     assert body["llm_ready"] is True
 
 
-def test_embedded_chroma_does_not_expose_server_management_routes(client: TestClient) -> None:
-    # These CVE-affected Chroma HTTP routes are not part of this local tutorial API.
-    # The dependency advisories remain unresolved; this only verifies API reachability.
+def test_removed_vector_server_routes_remain_unavailable(client: TestClient) -> None:
+    # Chroma is removed. These are still not part of the local teaching API.
     collection_path = "/api/v2/tenants/default_tenant/databases/default_database/collections"
     assert client.post(collection_path, json={"name": "fixture"}).status_code == 404
     assert client.patch(collection_path + "/fixture", json={"name": "fixture"}).status_code == 404

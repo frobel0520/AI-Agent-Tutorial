@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     database_url: str = "sqlite:///./data/app.db"
+    # Legacy setting accepted for existing .env files; never opened or modified.
     chroma_dir: str = "./data/chroma"
 
     llm_provider: str = "mock"
