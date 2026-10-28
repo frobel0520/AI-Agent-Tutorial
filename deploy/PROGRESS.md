@@ -11,7 +11,7 @@
 
 ## 目前狀態
 
-> **2026-09-21：線上後端已退役。** Supabase 專案 `fwcerljlhfzgfhfdjliv` 已不存在（DNS 查不到），決定不重建。
+> **2026-09-21：線上後端已退役。** Supabase 專案 `<retired-project>` 已不存在（DNS 查不到），決定不重建。
 > 線上只剩 GitHub Pages 前端，頁面顯示「線上 API 已停用」且不再呼叫 API；教學請用本機 FastAPI。
 
 | 項目 | 狀態 | 備註 |
@@ -93,11 +93,13 @@ SUPABASE_ACCESS_TOKEN=<Supabase personal access token>
 
 ---
 
-## 下一步
+## 目前排程
 
 線上後端已退役，目前沒有排定的工作。本機教學可直接使用（`python src\run.py`，開 `/learn`）。
 
-要恢復線上 demo 時：
+### 延後的重建參考（未排程）
+
+只有重新決定恢復線上 demo 時才需要以下步驟，不是目前待辦：
 
 1. 建新的 Supabase 專案，SQL Editor 執行 `supabase/schema.sql` 與 `supabase/migrations/` 全部 migration（含限流）。
 2. 設定 Function Secrets（含 `WEBHOOK_ALLOWED_URLS`）並部署 `api`。
@@ -132,3 +134,4 @@ supabase functions deploy api
 ```
 
 *最後更新：2026-09-22（線上後端退役、SEC-QA 強化、SDLC 基線文件、Harbor 維護畫面）*
+
