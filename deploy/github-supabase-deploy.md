@@ -1,5 +1,7 @@
 # GitHub Pages + Supabase 部署
 
+> ⚠️ **重建前必讀（2026-10-31，SEC-P1-20261031）**：`<owner>.github.io` 是同一帳號所有 GitHub Pages 專案共用的 origin，任何一個 Pages 站的腳本都讀得到這個 origin 的 localStorage，而 Supabase Auth 會把登入 session 存在 localStorage。因此前端在 `*.github.io` 上時會**自動停用 Google 登入**。重建線上服務時，前端改放在獨立網域（例如 Cloudflare Pages 的 `*.pages.dev`，免費），下文的 Authorized JavaScript origins、Site URL 與 `CORS_ORIGINS` 都改填該網域。
+
 正式環境不使用 Render。GitHub Pages 發布前端，Supabase Edge Function 提供 API，Supabase Database 保存資料。
 
 ## 架構
