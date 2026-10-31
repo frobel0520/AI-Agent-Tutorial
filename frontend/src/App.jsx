@@ -19,7 +19,12 @@ const ONLINE_API_RETIRED = !API_BASE;
 const ONLINE_API_RETIRED_MESSAGE = "線上 API 已停用，請在本機啟動 FastAPI 練習。";
 const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL || "").trim();
 const SUPABASE_PUBLISHABLE_KEY = String(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "").trim();
-const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
+// *.github.io 是同一帳號所有 GitHub Pages 專案共用的 origin，任何一個站的腳本都讀得到這裡的
+// localStorage。Supabase 會把登入 session 存在 localStorage，所以在共用 origin 上一律不啟用登入；
+// 重建線上服務時，前端要放在獨立網域（見 deploy/github-supabase-deploy.md）。
+const SHARED_PAGES_ORIGIN = window.location.hostname.endsWith(".github.io");
+const AUTH_DISABLED_ON_SHARED_ORIGIN_MESSAGE = "這個網址與其他 GitHub Pages 網站共用，為保護登入狀態已停用 Google 登入。";
+const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && !SHARED_PAGES_ORIGIN
   ? createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: { autoRefreshToken: true, detectSessionInUrl: true, persistSession: true },
     })
@@ -89,7 +94,7 @@ function AccountMenu({
   if (!authClientConfigured) {
     return (
       <div className="auth-panel auth-panel-unavailable">
-        <span className="auth-status">Google 登入尚未設定</span>
+        <span className="auth-status">{SHARED_PAGES_ORIGIN ? AUTH_DISABLED_ON_SHARED_ORIGIN_MESSAGE : "Google 登入尚未設定"}</span>
       </div>
     );
   }
@@ -664,7 +669,7 @@ function App() {
 
   const handleSignIn = useCallback(async () => {
     if (!authClient) {
-      showBanner("Google 登入尚未設定。", true);
+      showBanner(SHARED_PAGES_ORIGIN ? AUTH_DISABLED_ON_SHARED_ORIGIN_MESSAGE : "Google 登入尚未設定。", true);
       return;
     }
     setIsSigningIn(true);

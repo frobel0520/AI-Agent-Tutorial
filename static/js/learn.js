@@ -6,7 +6,12 @@ const API_DOCS_URL = "https://github.com/frobel0520/AI-Agent-Tutorial/tree/main/
 const OWN_WEBHOOK_PATH = "/hooks/incoming";
 const SUPABASE_URL = String(window.APP_CONFIG?.supabaseUrl || "").trim();
 const SUPABASE_PUBLISHABLE_KEY = String(window.APP_CONFIG?.supabasePublishableKey || "").trim();
-const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && window.supabase?.createClient
+// *.github.io 是同一帳號所有 GitHub Pages 專案共用的 origin，任何一個站的腳本都讀得到這裡的
+// localStorage。Supabase 會把登入 session 存在 localStorage，所以在共用 origin 上一律不啟用登入；
+// 重建線上服務時，前端要放在獨立網域（見 deploy/github-supabase-deploy.md）。
+const SHARED_PAGES_ORIGIN = window.location.hostname.endsWith(".github.io");
+const AUTH_DISABLED_ON_SHARED_ORIGIN_MESSAGE = "這個網址與其他 GitHub Pages 網站共用，為保護登入狀態已停用 Google 登入。";
+const authClient = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && !SHARED_PAGES_ORIGIN && window.supabase?.createClient
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: { autoRefreshToken: true, detectSessionInUrl: true, persistSession: true },
     })
