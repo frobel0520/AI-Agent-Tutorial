@@ -5,16 +5,27 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   python-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Dependency audit (any known vulnerability fails)
+        # 忽略的 chromadb 漏洞都在 Chroma 伺服器端點與 RBAC 授權模組；本專案以 langchain 內嵌本機資料夾使用，
+        # 沒有啟動 Chroma 伺服器，也沒用授權模組。chromadb 出修正版後移除忽略清單。（2026-11-01）
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt --ignore-vuln PYSEC-2026-311 --ignore-vuln PYSEC-2026-3813 --ignore-vuln PYSEC-2026-3814 --ignore-vuln PYSEC-2026-3815
       - name: Run tests
         env:
           LLM_PROVIDER: mock
@@ -29,6 +40,8 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20.19.0"
@@ -36,6 +49,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install frontend dependencies
         run: npm ci
+      - name: Dependency audit (high/critical fails)
+        run: npm audit --audit-level=high
       - name: Build frontend
         run: npm run build
       - name: Install Chromium for browser smoke
@@ -61,6 +76,8 @@ jobs:
       RATE_LIMIT_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.4.5
