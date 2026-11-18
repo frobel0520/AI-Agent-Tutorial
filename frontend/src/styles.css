@@ -1176,10 +1176,9 @@ button:disabled {
     max-width: calc(100vw - 32px);
   }
 
+  /* 狀態字很短（例如「線上 API 已停用」），完整顯示，不截成半截字 */
   .connection-pill span:last-child {
-    max-width: 78px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .auth-panel button.auth-signin {
