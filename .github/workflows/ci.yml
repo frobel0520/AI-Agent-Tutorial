@@ -50,7 +50,8 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
       - name: Dependency audit (high/critical fails)
-        run: npm audit --audit-level=high
+        # 限期例外清單：security/audit-exceptions.json（到期自動恢復擋下）
+        run: node ../scripts/audit-gate.mjs npm
       - name: Build frontend
         run: npm run build
       - name: Install Chromium for browser smoke
