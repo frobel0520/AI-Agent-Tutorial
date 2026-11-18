@@ -1143,7 +1143,7 @@ button:disabled {
   }
 
   .hero h1 {
-    font-size: 44px;
+    font-size: clamp(28px, 8vw, 38px);
   }
 
   .hero-visual {
